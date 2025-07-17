@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Signup API</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    label, input, button { font-size: 1.1em; }
+    #result { margin-top: 1.5em; white-space: pre-wrap; background: #f7f7f7; padding: 1em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h2>Test /signup API</h2>
+  <form id="signupForm">
+    <label>Name: <input type="text" id="name" required></label><br><br>
+    <label>Mobile: <input type="text" id="mobile"></label><br><br>
+    <label>Password: <input type="password" id="password" required></label><br><br>
+    <label>Referral Code: <input type="text" id="referralCode"></label><br><br>
+    <button type="submit">Sign Up</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const mobile = document.getElementById('mobile').value;
+      const password = document.getElementById('password').value;
+      const referralCode = document.getElementById('referralCode').value;
+      document.getElementById('result').textContent = 'Loading...';
+      try {
+        const res = await fetch('http://localhost:5000/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, mobile, password, referralCode })
+        });
+        const data = await res.json();
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById('result').textContent = 'Request failed: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+digraph Solana_Agent_Kit_Flow {
+	size="10,10"
+	Start [label="Start Agent
+(ts-node index.ts)" color=lightblue shape=ellipse style=filled]
+	Init [label="Initialize Agent
+(initializeAgent())" color=lightgreen shape=box style=filled]
+	Choose [label="Choose Mode
+(chooseMode())" color=orange shape=diamond style=filled]
+	ChatMode [label="Run Chat Mode
+(runChatMode())" color=lightyellow shape=box style=filled]
+	AutoMode [label="Run Autonomous Mode
+(runAutonomousMode())" color=lightyellow shape=box style=filled]
+	Error [label="Error Occurred
+Log Error & Exit" color=red shape=ellipse style=filled]
+	End [label="End of Execution" color=lightgrey shape=ellipse style=filled]
+	Start -> Init
+	Init -> Choose
+	Choose -> ChatMode [label="1 or chat"]
+	Choose -> AutoMode [label="2 or auto"]
+	ChatMode -> End
+	AutoMode -> End
+	Init -> Error [label="Error?"]
+	ChatMode -> Error [label="Error?"]
+	AutoMode -> Error [label="Error?"]
+	Error -> End
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Wingo My Bets API</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    label, input, button { font-size: 1.1em; }
+    #result { margin-top: 1.5em; white-space: pre-wrap; background: #f7f7f7; padding: 1em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h2>Test /wingo/my-bets?userId= API</h2>
+  <form id="myBetsForm">
+    <label for="userId">User ID:</label>
+    <input type="number" id="userId" name="userId" required min="1">
+    <button type="submit">Fetch My Bets</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById('myBetsForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const userId = document.getElementById('userId').value;
+      document.getElementById('result').textContent = 'Loading...';
+      try {
+        const res = await fetch(`http://localhost:5000/api/wingo/my-bets?userId=${userId}`);
+        if (!res.ok) {
+          document.getElementById('result').textContent = `Error: ${res.status} ${res.statusText}`;
+          return;
+        }
+        const data = await res.json();
+        if (Array.isArray(data) && data.length === 0) {
+          document.getElementById('result').textContent = 'No bets found for this user.';
+        } else {
+          document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        document.getElementById('result').textContent = 'Request failed: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

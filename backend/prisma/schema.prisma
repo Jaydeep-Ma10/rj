@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ManualDeposit {
+  id        Int      @id @default(autoincrement())
+  name      String
+  mobile    String
+  amount    Float
+  utr       String
+  method    String?
+  slipUrl   String?
+  verified  Boolean  @default(false)
+  status    String   @default("pending") // pending, approved, rejected
+  userId    Int?
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  mobile       String?
+  balance      Float    @default(0)
+  password     String
+  referralCode String   @unique
+  referredBy   String?
+  createdAt    DateTime @default(now())
+
+  wingoBets    WingoBet[]
+}
+
+model WingoRound {
+  id           Int      @id @default(autoincrement())
+  period       String   @unique // e.g. 20250709100030261
+  interval     String   // '30s', '1m', '3m', '5m'
+  startTime    DateTime
+  endTime      DateTime
+  status       String   @default("pending") // 'pending', 'closed', 'settled'
+  resultNumber Int?     // winning number (0-9)
+  resultAt     DateTime?
+  bets         WingoBet[]
+}
+
+model WingoRoundAnalytics {
+  id          Int      @id @default(autoincrement())
+  roundId     Int      @unique
+  totalBets   Float    // sum of all bets for the round
+  totalPayout Float    // sum of all payouts for the round
+  profit      Float    // house profit = totalBets - totalPayout
+  createdAt   DateTime @default(now())
+}
+
+model WingoBet {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  round      WingoRound @relation(fields: [roundId], references: [id])
+  roundId    Int
+  type       String   // 'color', 'bigsmall', 'number'
+  value      String   // e.g. 'green', 'big', '5'
+  amount     Float
+  multiplier Int      // 1, 5, 10, 20, 50, 100
+  createdAt  DateTime @default(now())
+  win        Boolean? // null: not settled, true/false: result
+  payout     Float?   // amount won (if any)
+}
+
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // hashed
+  createdAt DateTime @default(now())
+  lastLogin DateTime?
+}
+
+model ManualWithdraw {
+  id            Int      @id @default(autoincrement())
+  name          String
+  mobile        String
+  amount        Float
+  accountHolder String?
+accountNumber String?
+ifsc          String?
+  status        String   @default("pending")
+  userId        Int?
+  createdAt     DateTime @default(now())
+}

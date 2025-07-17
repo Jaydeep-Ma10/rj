@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Virtual Wallet</title>
+</head>
+
+<body>
+    <h2>👤 Virtual Wallet</h2>
+
+    <h3>💰 Balance for <span id="user-name-label">[Enter name]</span>: ₹<span id="balance">0.00</span></h3>
+
+    <h4>Submit Manual Deposit</h4>
+    <form id="deposit-form" enctype="multipart/form-data">
+        <label>Name: <input type="text" name="name" id="user-name-input" required /></label><br />
+        <label>Mobile: <input type="text" name="mobile" required /></label><br />
+        <label>Amount (₹): <input type="number" name="amount" required /></label><br />
+        <label>UTR: <input type="text" name="utr" required /></label><br />
+        <label>Slip (optional): <input type="file" name="slip" accept="image/*" /></label><br />
+        <button type="submit">Submit Deposit</button>
+    </form>
+
+    <br />
+    <button onclick="refreshBalance()">🔄 Refresh Balance</button>
+
+    <script>
+        const balanceSpan = document.getElementById('balance');
+        const userLabel = document.getElementById('user-name-label');
+        const userInput = document.getElementById('user-name-input');
+        const form = document.getElementById('deposit-form');
+
+        async function fetchBalance(name) {
+            if (!name) {
+                alert('Please enter your name first.');
+                return;
+            }
+
+            userLabel.textContent = name;
+
+            try {
+                const res = await fetch(`http://localhost:5000/api/user/${name}/balance`);
+                const data = await res.json();
+
+                if (res.ok && data.balance !== undefined) {
+                    balanceSpan.textContent = data.balance.toFixed(2);
+                } else {
+                    balanceSpan.textContent = '0.00';
+                    console.warn('User not found or balance error');
+                }
+            } catch (err) {
+                console.error('Balance fetch failed:', err);
+                balanceSpan.textContent = '0.00';
+            }
+        }
+
+        async function refreshBalance() {
+            const name = userInput.value.trim();
+            if (!name) {
+                alert('Enter your name to fetch balance.');
+                return;
+            }
+            fetchBalance(name);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const name = formData.get('name').trim();
+
+            if (!name) {
+                alert('Please enter a name');
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:5000/api/manual-deposit', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    alert('✅ Deposit submitted! Wait for admin approval.');
+                    fetchBalance(name); // Fetch balance immediately if already approved
+                    form.reset();
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Failed to submit deposit');
+            }
+        });
+    </script>
+</body>
+
+</html>
