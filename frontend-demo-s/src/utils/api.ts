@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // use tunnel URL in production
+  baseURL: 'https://rj-755j.onrender.com/api', // use Render backend in production
 });
 
 export default api;

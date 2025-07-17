@@ -74,7 +74,7 @@ const Deposit = () => {
       fd.append("utr", formData.utr);
       if (formData.slip) fd.append("slip", formData.slip);
       if (selected?.id) fd.append("method", selected.name);
-      const res = await fetch("http://localhost:5000/api/manual-deposit", {
+      const res = await fetch("https://rj-755j.onrender.com/api/manual-deposit", {
         method: "POST",
         body: fd,
       });

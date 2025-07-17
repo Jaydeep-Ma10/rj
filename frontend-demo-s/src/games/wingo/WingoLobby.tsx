@@ -27,7 +27,7 @@ const WingoLobby: React.FC<WingoLobbyProps> = ({ onIntervalChange, onBalanceRefr
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/balance`);
+      const res = await fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/balance`);
       if (!res.ok) throw new Error("Failed to fetch balance");
       const data = await res.json();
       setBalance(data.balance);

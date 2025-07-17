@@ -1,7 +1,7 @@
 // src/utils/socket.ts
 import { io as clientIo, Socket } from 'socket.io-client';
 
-const URL = 'http://localhost:5000';
+const URL = 'https://rj-755j.onrender.com';
 
 let socket: Socket | null = null;
 

@@ -12,6 +12,8 @@ import authRoutes from './routes/authRoutes.js';
 import adminAuthRoutes from './routes/adminAuthRoutes.js';
 import manualWithdrawRoutes from './routes/manualWithdrawRoutes.js';
 import wingoRoutes from './routes/wingoRoutes.js';
+import { startAutoCreateWingoRounds } from './scripts/autoCreateWingoRounds.js';
+import { startAutoSettleWingoRounds } from './scripts/autoSettleWingoRounds.js';
 
 dotenv.config();
 
@@ -49,7 +51,11 @@ app.use('/admin', adminAuthRoutes);
 // 👇 Serves uploaded slips
 app.use('/uploads', express.static('uploads'));
 
-// ✅ Start server
-httpServer.listen(5000, () => {
-    console.log('🚀 Server running with Socket.io on http://localhost:5000');
+// Start the server
+httpServer.listen(process.env.PORT || 5000, () => {
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
+
+// Start Wingo background jobs
+startAutoCreateWingoRounds();
+startAutoSettleWingoRounds();

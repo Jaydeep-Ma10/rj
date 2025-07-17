@@ -50,7 +50,7 @@ const WingoTabs: React.FC<WingoTabsProps> = ({ interval, userId }) => {
   React.useEffect(() => {
     if (tab !== "history" && tab !== "chart") return;
     setLoading(true); setError(null);
-    fetch(`http://localhost:5000/api/wingo/history?interval=${interval}`)
+    fetch(`https://rj-755j.onrender.com/api/wingo/history?interval=${interval}`)
       .then(r => r.json())
       .then(data => {
         setHistoryData(data);
@@ -79,7 +79,7 @@ const WingoTabs: React.FC<WingoTabsProps> = ({ interval, userId }) => {
       return;
     }
     setLoading(true); setError(null);
-    fetch(`http://localhost:5000/api/wingo/my-bets?userId=${userId}`)
+    fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${userId}`)
       .then(r => r.json())
       .then(setMyHistory)
       .catch(e => setError("Failed to load your bets."))

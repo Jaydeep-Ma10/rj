@@ -108,4 +108,79 @@ function pickLosingNumberForBet(bet) {
   }
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+export function startAutoSettleWingoRounds() {
+  async function main() {
+    while (true) {
+      const now = new Date();
+      // Find all expired, un-settled rounds
+      const expiredRounds = await prisma.wingoRound.findMany({
+        where: {
+          endTime: { lt: now },
+          status: 'pending',
+        },
+        orderBy: { endTime: 'asc' },
+        take: 10
+      });
+      for (const round of expiredRounds) {
+        try {
+          console.log(`[${new Date().toLocaleTimeString()}] Settling round id=${round.id} period=${round.period} interval=${round.interval}`);
+          // Run settlement logic (reuse backend logic here)
+          // Inline settlement copied from wingoController.settleRound
+          const bets = await prisma.wingoBet.findMany({ where: { roundId: round.id } });
+          let resultNumber;
+          if (bets.length === 1) {
+            // Single user bet logic
+            const bet = bets[0];
+            if (bet.amount < 500) {
+              // Favor user to win
+              resultNumber = pickWinningNumberForBet(bet);
+            } else {
+              // Favor user to lose
+              resultNumber = pickLosingNumberForBet(bet);
+            }
+          } else {
+            // Random result
+            resultNumber = Math.floor(Math.random() * 10);
+          }
+          // Settle all bets
+          for (const bet of bets) {
+            let win = false, payout = 0;
+            if (bet.type === 'color') {
+              if (
+                (bet.value === 'green' && [1,3,7,9].includes(resultNumber)) ||
+                (bet.value === 'red' && [2,4,6,8,9].includes(resultNumber)) ||
+                (bet.value === 'violet' && [0,5].includes(resultNumber))
+              ) win = true;
+            } else if (bet.type === 'bigsmall') {
+              if (
+                (bet.value === 'big' && [5,6,7,8,9].includes(resultNumber)) ||
+                (bet.value === 'small' && [0,1,2,3,4].includes(resultNumber))
+              ) win = true;
+            } else if (bet.type === 'number') {
+              if (Number(bet.value) === resultNumber) win = true;
+            }
+            if (win) {
+              // Use correct odds for payout
+              if (bet.type === 'color') {
+                payout = bet.amount * (bet.value === 'violet' ? 4.5 : 2);
+              } else if (bet.type === 'bigsmall') {
+                payout = bet.amount * 2;
+              } else if (bet.type === 'number') {
+                payout = bet.amount * 9;
+              }
+              await prisma.user.update({ where: { id: bet.userId }, data: { balance: { increment: payout } } });
+            }
+            await prisma.wingoBet.update({ where: { id: bet.id }, data: { win, payout } });
+          }
+          // Update round
+          await prisma.wingoRound.update({ where: { id: round.id }, data: { status: 'settled', resultNumber, resultAt: new Date() } });
+          console.log(`[${new Date().toLocaleTimeString()}] Settled round id=${round.id} with resultNumber=${resultNumber}`);
+        } catch (e) {
+          console.error(`[Wingo] Error settling round:`, e);
+        }
+      }
+      await new Promise(res => setTimeout(res, 1000));
+    }
+  }
+  main().catch(e => { console.error(e); });
+}
