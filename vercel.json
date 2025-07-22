@@ -1,4 +1,4 @@
 {
-    "buildCommand": "cd frontend-demo-s && npm install && tsc -p tsconfig.vercel.json && vite build",
+    "buildCommand": "cd frontend-demo-s && npm install && npx tsc -p tsconfig.vercel.json && npm run build",
     "outputDirectory": "frontend-demo-s/dist"
   }
