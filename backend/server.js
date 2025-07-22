@@ -9,45 +9,69 @@ import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import manualDepositRoutes from './routes/manualDepositRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import adminAuthRoutes from './routes/adminAuthRoutes.js';
-import manualWithdrawRoutes from './routes/manualWithdrawRoutes.js';
-import wingoRoutes from './routes/wingoRoutes.js';
-import { initRoundManagement } from './utils/roundManager.js';
+
+// Load environment variables first
+dotenv.config();
+
+// Constants
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = process.env.PORT || 5000;
+
+// Initialize Express and HTTP server
+const app = express();
+const httpServer = createServer(app);
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
-dotenv.config();
+// Initialize Socket.IO
+export const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: '*', // Consider restricting this in production
+    methods: ['GET', 'POST']
+  }
+});
 
-// Get directory name in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Ensure uploads directory exists
+function ensureUploadsDir() {
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+}
 
-const app = express();
-const httpServer = createServer(app);
+// Apply database migrations
+async function applyMigrations() {
+  try {
+    console.log('🔍 Checking for pending migrations...');
+    execSync('npx prisma migrate deploy', { 
+      stdio: 'inherit',
+      env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
+    });
+    console.log('✅ Database migrations applied successfully');
+  } catch (error) {
+    console.error('❌ Failed to apply migrations:', error);
+    throw error;
+  }
+}
 
-/**
- * Initialize admin users if none exist
- */
+// Initialize admin users
 async function initializeAdmins() {
   try {
-    // Check if any admin exists
     const adminCount = await prisma.admin.count();
     
     if (adminCount === 0) {
       console.log('⚠️  No admin users found. Creating default admin...');
-      
-      // Get the absolute path to createAdmins.js
       const createAdminsPath = path.join(__dirname, 'scripts', 'createAdmins.js');
       
-      // Run the admin creation script
       execSync(`node ${createAdminsPath}`, { 
         stdio: 'inherit',
-        env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
+        env: { 
+          ...process.env, 
+          NODE_OPTIONS: '--experimental-vm-modules'
+        },
+        cwd: __dirname
       });
       
       console.log('✅ Admin initialization completed');
@@ -56,64 +80,85 @@ async function initializeAdmins() {
     }
   } catch (error) {
     console.error('❌ Error initializing admins:', error.message);
+    throw error;
   }
 }
-export const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: '*', // or restrict to your frontend origin
-    methods: ['GET', 'POST']
-  }
-});
 
-// 📁 Ensure uploads folder exists
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
+// Initialize application
+async function initializeApp() {
+  try {
+    // 1. Ensure required directories exist
+    ensureUploadsDir();
+    
+    // 2. Apply database migrations
+    await applyMigrations();
+    
+    // 3. Initialize admin users
+    await initializeAdmins();
+    
+    // 4. Initialize round management
+    const { initRoundManagement } = await import('./utils/roundManager.js');
+    const cleanupRoundManagement = initRoundManagement();
+    
+    // 5. Set up graceful shutdown
+    const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
+    shutdownSignals.forEach(signal => {
+      process.on(signal, () => {
+        console.log(`\n${signal} received. Shutting down gracefully...`);
+        cleanupRoundManagement?.();
+        httpServer.close(() => {
+          console.log('Server closed');
+          process.exit(0);
+        });
+      });
+    });
+
+    // 6. Start the server
+    httpServer.listen(PORT, () => {
+      console.log(`🚀 Server running with Socket.io on http://localhost:${PORT}`);
+      console.log('Round management system initialized');
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to initialize application:', error);
+    process.exit(1);
+  }
 }
 
-// ✅ Middleware
-app.use(cors());
+// Import routes
+function setupRoutes() {
+  // Import routes dynamically
+  const routes = [
+    { path: '/api', module: './routes/manualDepositRoutes.js' },
+    { path: '/api', module: './routes/adminRoutes.js' },
+    { path: '/api', module: './routes/userRoutes.js' },
+    { path: '/api', module: './routes/authRoutes.js' },
+    { path: '/api', module: './routes/manualWithdrawRoutes.js' },
+    { path: '/api/wingo', module: './routes/wingoRoutes.js' },
+    { path: '/admin', module: './routes/adminAuthRoutes.js' }
+  ];
 
-// 👇 Parses application/json for all routes
-app.use(express.json());
-
-// 👇 Parses urlencoded form data (important for multipart/form-data)
-app.use(express.urlencoded({ extended: true }));
-
-// 👇 Multer-based file route
-app.use('/api', manualDepositRoutes);
-app.use('/api', adminRoutes);
-app.use('/api', userRoutes);
-app.use('/api', authRoutes);
-app.use('/api', manualWithdrawRoutes);
-app.use('/api/wingo', wingoRoutes);
-app.use('/admin', adminAuthRoutes);
-// 👇 Serves uploaded slips
-app.use('/uploads', express.static('uploads'));
-
-// Initialize admins first
-await initializeAdmins();
-
-// Then initialize round management system
-const cleanupRoundManagement = initRoundManagement();
-
-// Handle graceful shutdown
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
-
-function gracefulShutdown() {
-  console.log('Shutting down gracefully...');
-  // Cleanup round management intervals
-  cleanupRoundManagement();
-  // Close the HTTP server
-  httpServer.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+  routes.forEach(async (route) => {
+    try {
+      const { default: router } = await import(route.module);
+      app.use(route.path, router);
+    } catch (error) {
+      console.error(`❌ Failed to load route ${route.module}:`, error);
+    }
   });
+
+  // Static files
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 }
 
-// ✅ Start server
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
-    console.log(`🚀 Server running with Socket.io on http://localhost:${PORT}`);
-    console.log('Round management system initialized');
-});
+// Configure middleware
+function configureMiddleware() {
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+}
+
+// Start the application
+configureMiddleware();
+setupRoutes();
+initializeApp();
