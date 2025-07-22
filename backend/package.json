@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-     "build": "prisma generate && prisma migrate deploy",
-  "start": "node server.js",
-  "migrate": "npx prisma migrate deploy"
+    "build": "prisma generate && prisma migrate deploy",
+    "start": "node server.js",
+    "migrate": "npx prisma migrate deploy"
   },
   "keywords": [],
   "author": "",

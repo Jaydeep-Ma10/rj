@@ -133,7 +133,7 @@ const AdminDashboard = () => {
                     <td className="py-2 px-2">₹{d.amount}</td>
                     <td className="py-2 px-2">{d.utr}</td>
                     <td className="py-2 px-2">{d.method}</td>
-                    <td className="py-2 px-2">{d.slipUrl ? <a href={`http://localhost:5000${d.slipUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
+                    <td className="py-2 px-2">{d.slipUrl ? <a href={`https://rj-755j.onrender.com${d.slipUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
                     <td className="py-2 px-2">{new Date(d.createdAt).toLocaleString()}</td>
                     <td className="py-2 px-2 capitalize">{d.status}</td>
                     <td className="py-2 px-2">
