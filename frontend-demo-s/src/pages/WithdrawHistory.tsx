@@ -11,7 +11,7 @@ const WithdrawHistory = () => {
     if (!user?.name) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/withdrawals`)
+    fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/withdrawals`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch withdrawal history");
         const data = await res.json();

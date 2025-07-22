@@ -47,7 +47,7 @@ const WingoGamePanel: React.FC<WingoGamePanelProps> = ({ interval = "30s", userI
   // Fetch current round info & timer
   useEffect(() => {
     async function fetchRound() {
-      const res = await fetch(`https://rj-755j.onrender.com/api/wingo/round/current?interval=${interval}`);
+      const res = await fetch(`http://localhost:5000/api/wingo/round/current?interval=${interval}`);
       if (res.ok) {
         const round = await res.json();
         setCurrentRound(round);
@@ -81,7 +81,7 @@ const WingoGamePanel: React.FC<WingoGamePanelProps> = ({ interval = "30s", userI
   useEffect(() => {
     async function fetchWinners() {
       const all = await Promise.all(PERIODS.map(async (p) => {
-        const res = await fetch(`https://rj-755j.onrender.com/api/wingo/history?interval=${p}`);
+        const res = await fetch(`http://localhost:5000/api/wingo/history?interval=${p}`);
         if (res.ok) {
           const data = await res.json();
           return { period: p, winners: data.slice(0, 5).map((r: any) => r.resultNumber) };
@@ -123,7 +123,7 @@ const WingoGamePanel: React.FC<WingoGamePanelProps> = ({ interval = "30s", userI
       setBetMessage("Please select a bet."); setPlacingBet(false); return;
     }
     try {
-      const res = await fetch(`https://rj-755j.onrender.com/api/wingo/bet`, {
+      const res = await fetch(`http://localhost:5000/api/wingo/bet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, roundId: currentRound.id, type, value, amount, multiplier })

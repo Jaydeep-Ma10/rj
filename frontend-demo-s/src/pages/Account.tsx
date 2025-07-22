@@ -14,7 +14,7 @@ const Account = () => {
     setLoading(true);
     setError(null);
     // Fetch balance
-    fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/balance`)
+    fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/balance`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch balance");
         const data = await res.json();
@@ -23,7 +23,7 @@ const Account = () => {
       .catch((err) => setError(err.message || "Error fetching balance"))
       .finally(() => setLoading(false));
     // Fetch profile (id, lastLogin, etc)
-    fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/profile`)
+    fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/profile`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();

@@ -15,7 +15,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = await api.post("/admin/login", form, { baseURL: "https://rj-755j.onrender.com" });
+      const res = await api.post("/admin/login", form, { baseURL: "http://localhost:5000" });
       localStorage.setItem("adminToken", res.data.token);
       navigate("/admin/dashboard");
     } catch (err: any) {

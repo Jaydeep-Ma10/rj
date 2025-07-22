@@ -16,7 +16,7 @@ const Wallet = () => {
     if (!userIdNum) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/id/${userIdNum}/balance`)
+    fetch(`http://localhost:5000/api/user/id/${userIdNum}/balance`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch balance");
         const data = await res.json();

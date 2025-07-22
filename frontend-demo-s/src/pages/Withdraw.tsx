@@ -21,7 +21,7 @@ const Withdraw = () => {
     setSubmitStatus(null);
     setSubmitting(true);
     try {
-      const res = await fetch("https://rj-755j.onrender.com/api/manual-withdraw", {
+      const res = await fetch("http://localhost:5000/api/manual-withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

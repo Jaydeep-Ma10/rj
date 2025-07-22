@@ -21,8 +21,8 @@ const AllTransactions: React.FC = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/deposits`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/withdrawals`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
+      fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/deposits`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
+      fetch(`http://localhost:5000/api/user/${encodeURIComponent(user.name)}/withdrawals`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
     ])
       .then(([depositData, withdrawalData]) => {
         const deposits: Transaction[] = (depositData.deposits || []).map((d: any) => ({
