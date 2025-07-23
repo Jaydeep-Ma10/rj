@@ -1,17 +1,26 @@
 import React, { useState } from "react";
 import MultiplierGrid from "./MultiplierGrid";
 
+import { useAuth } from "../../../hooks/useAuth";
+
 interface BetModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedOption: string;
+  roundId: number | null;
+  onSuccess?: () => void;
 }
 
 const BetModal: React.FC<BetModalProps> = ({
   isOpen,
   onClose,
   selectedOption,
+  roundId,
+  onSuccess,
 }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState(1);
   const [quantity, setQuantity] = useState(1);
   const [multiplier, setMultiplier] = useState(1);
@@ -126,21 +135,39 @@ const BetModal: React.FC<BetModalProps> = ({
         <div className="flex flex-col gap-3 mt-6">
           <button
             className="w-full py-3 bg-yellow-400 text-black font-bold text-md rounded-full"
-            disabled={!agree}
-            onClick={() => {
-              if (agree) {
-                console.log("Bet Placed:", {
-                  selectedOption,
-                  amount,
-                  quantity,
+            disabled={!agree || loading || !roundId}
+            onClick={async () => {
+              if (!agree || !user?.id || !roundId) return;
+              setLoading(true);
+              setError(null);
+              try {
+                const payload = {
+                  userId: user.id,
+                  roundId,
+                  type: getBetType(selectedOption),
+                  value: getBetValue(selectedOption),
+                  amount: amount * quantity,
                   multiplier,
-                  total,
+                };
+                const res = await fetch("https://rj-755j.onrender.com/api/wingo/bet", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
                 });
+                if (!res.ok) {
+                  const err = await res.json();
+                  throw new Error(err.error || "Failed to place bet");
+                }
+                if (onSuccess) onSuccess();
                 onClose();
+              } catch (e: any) {
+                setError(e.message || "Failed to place bet");
+              } finally {
+                setLoading(false);
               }
             }}
           >
-            Bet Placing Amount: ₹{total}
+            {loading ? "Placing Bet..." : `Bet Placing Amount: ₹${total}`}
           </button>
 
           <button
@@ -150,9 +177,32 @@ const BetModal: React.FC<BetModalProps> = ({
             Cancel
           </button>
         </div>
+        {error && (
+          <div className="bg-red-500 text-white p-2 rounded mt-2 text-center font-bold">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+// Helper to parse bet type/value from selectedOption
+function getBetType(option: string) {
+  const opt = option.toLowerCase();
+  if (["red", "green", "violet"].some((c) => opt.includes(c))) return "color";
+  if (["big", "small"].some((c) => opt.includes(c))) return "bigsmall";
+  if (opt.includes("digit")) return "number";
+  if (opt === "random") return "random";
+  return "unknown";
+}
+function getBetValue(option: string) {
+  const opt = option.toLowerCase();
+  if (["red", "green", "violet"].some((c) => opt.includes(c))) return opt;
+  if (["big", "small"].some((c) => opt.includes(c))) return opt;
+  if (opt.includes("digit")) return opt.replace("digit", "").trim();
+  if (opt === "random") return "random";
+  return opt;
+}
 
 export default BetModal;

@@ -4,6 +4,7 @@ interface HistoryItem {
   id: string;
   period: string;
   number: number;
+  status?: string; // 'pending' or 'settled'
 }
 
 const getColor = (num: number) => {
@@ -36,6 +37,7 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
               <th className="py-2 px-3 text-left">Number</th>
               <th className="py-2 px-3 text-left">Big/Small</th>
               <th className="py-2 px-3 text-left">Color</th>
+              <th className="py-2 px-3 text-left">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +50,13 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
                 <td className="py-2 px-3 font-bold">{item.number}</td>
                 <td className="py-2 px-3">{getBigSmall(item.number)}</td>
                 <td className="py-2 px-3">{getColor(item.number)}</td>
+                <td className="py-2 px-3">
+                  {item.status === "pending" ? (
+                    <span className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">Ongoing</span>
+                  ) : (
+                    <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">Settled</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

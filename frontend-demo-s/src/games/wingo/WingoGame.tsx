@@ -15,38 +15,107 @@ import MyHistoryTable from "./components/MyHistoryTable";
 
 
 
+import { useAuth } from "../../hooks/useAuth";
+import { useEffect } from "react";
+
 const WingoGame = () => {
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBet, setSelectedBet] = useState("");
   const [activeTab, setActiveTab] = useState<"game" | "chart" | "my">("game");
+  const [selectedInterval, setSelectedInterval] = useState("WinGo 30sec");
+
+  // Backend data integration
+  const [gameHistoryData, setGameHistoryData] = useState([]);
+  const [chartData, setChartData] = useState([]); // For now, use same as history
+  const [myHistoryData, setMyHistoryData] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingMyHistory, setLoadingMyHistory] = useState(false);
+  const [errorHistory, setErrorHistory] = useState(null);
+  const [errorMyHistory, setErrorMyHistory] = useState(null);
+
+  // Backend-driven round/timer state
+  const [currentRound, setCurrentRound] = useState(null);
+  const [roundLoading, setRoundLoading] = useState(false);
+  const [roundError, setRoundError] = useState(null);
+  const [timerDuration, setTimerDuration] = useState(30);
+  const [timerPeriod, setTimerPeriod] = useState("");
+
+  useEffect(() => {
+    // Fetch game history
+    setLoadingHistory(true);
+    fetch("https://rj-755j.onrender.com/api/wingo/history")
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to fetch game history");
+        const data = await res.json();
+        // Map backend data to include status for badge
+        const mapped = (Array.isArray(data) ? data : data.history || []).map((item, i) => ({
+          id: item.period || String(i),
+          period: item.period,
+          number: item.resultNumber,
+          status: item.resultNumber == null ? "pending" : "settled",
+          ...item,
+        }));
+        setGameHistoryData(mapped);
+        setChartData(mapped);
+      })
+      .catch((err) => setErrorHistory(err.message || "Error fetching game history"))
+      .finally(() => setLoadingHistory(false));
+  }, []);
+
+  // Fetch current round info from backend when interval changes
+  useEffect(() => {
+    let intervalLabel = selectedInterval
+      .replace("WinGo ", "")
+      .replace("sec", "s")
+      .replace("Min", "m")
+      .replace(/\s/g, "") // Remove all spaces
+      .trim();
+    setRoundLoading(true);
+    setRoundError(null);
+    setCurrentRound(null);
+    fetch(`https://rj-755j.onrender.com/api/wingo/round/current?interval=${encodeURIComponent(intervalLabel)}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("No current round");
+        const round = await res.json();
+        setCurrentRound(round);
+        setTimerPeriod(round.period || "");
+        // Calculate timer duration (seconds left)
+        const endTime = new Date(round.endTime).getTime();
+        const now = Date.now();
+        const diff = Math.floor((endTime - now) / 1000);
+        setTimerDuration(diff > 0 ? diff : 0);
+      })
+      .catch((err) => setRoundError(err.message || "Error fetching round"))
+      .finally(() => setRoundLoading(false));
+  }, [selectedInterval]);
+
+  useEffect(() => {
+    // Fetch my bet history
+    if (!user?.id) return;
+    setLoadingMyHistory(true);
+    fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to fetch my bet history");
+        const data = await res.json();
+        // Map status for badge: pending if result is null/undefined
+        const mapped = (Array.isArray(data) ? data : data.bets || []).map((item, i) => ({
+          ...item,
+          id: item.betId || String(i),
+          status: item.resultNumber == null ? "pending" : "settled",
+          result:
+            item.win === true ? "Win" : item.win === false ? "Lose" : undefined,
+        }));
+        setMyHistoryData(mapped);
+      })
+      .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
+      .finally(() => setLoadingMyHistory(false));
+  }, [user?.id]);
 
   const handleOpenBet = (option: string) => {
     setSelectedBet(option);
     setIsModalOpen(true);
   };
-
-  const [selectedInterval, setSelectedInterval] = useState("WinGo 30sec");
-
-
-  const gameHistoryData = [
-    { id: "1", period: "20250723100030175", number: 0 },
-    { id: "2", period: "20250723100028175", number: 7 },
-    { id: "3", period: "20250723100026175", number: 4 },
-    { id: "4", period: "20250723100024175", number: 5 },
-  ];
-  const chartData = [
-  { id: "1", period: "20250723100030175", number: 0 },
-  { id: "2", period: "20250723100028175", number: 7 },
-  { id: "3", period: "20250723100026175", number: 4 },
-  { id: "4", period: "20250723100024175", number: 5 },
-  { id: "5", period: "20250723100022175", number: 9 },
-];
-
-const myHistoryData = [
-  { id: "1", period: "20250723100030175", betType: "Green", amount: 100, result: "Win" },
-  { id: "2", period: "20250723100028175", betType: "Digit 7", amount: 50, result: "Lose" },
-  { id: "3", period: "20250723100026175", betType: "BIG", amount: 200, result: "Win" },
-];
 
 
 
@@ -64,8 +133,11 @@ const myHistoryData = [
 
       <GameHeaderCard
         selectedInterval={selectedInterval}
-        results={[4, 2, 9, 0, 5]}
-        timePeriod="20250723100030175"
+        results={gameHistoryData.slice(0, 5).map((item: any) => item.number)}
+        timePeriod={timerPeriod}
+        duration={timerDuration}
+        roundLoading={roundLoading}
+        roundError={roundError}
       />
 
      <div className="bg-[#1e2d5c] p-4 rounded-xl shadow-md space-y-6 mt-4"> <BetOptions onSelect={(color) => handleOpenBet(color)} />
@@ -91,6 +163,24 @@ const myHistoryData = [
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedOption={selectedBet}
+        roundId={currentRound?.id || null}
+        onSuccess={() => {
+          // Refresh wallet and my bet history after successful bet
+          // 1. Dispatch a custom event for WalletCard to refresh
+          window.dispatchEvent(new Event("wallet:refresh"));
+          // 2. Refresh my bet history
+          if (user?.id) {
+            setLoadingMyHistory(true);
+            fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
+              .then(async (res) => {
+                if (!res.ok) throw new Error("Failed to fetch my bet history");
+                const data = await res.json();
+                setMyHistoryData(data.bets || []);
+              })
+              .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
+              .finally(() => setLoadingMyHistory(false));
+          }
+        }}
       />
 
       {/* Tab Switcher Buttons */}

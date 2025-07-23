@@ -254,8 +254,10 @@ export const settleRound = async (req, res) => {
 export const getGameHistory = async (req, res) => {
   try {
     const { interval } = req.query;
-    const where = { status: "settled" };
+    const where = {};
     if (interval) where.interval = interval;
+    // Show both pending and settled rounds
+    where.status = { in: ["pending", "settled"] };
     console.log("[WingoHistory] Querying for:", where);
     const rounds = await prisma.wingoRound.findMany({
       where,

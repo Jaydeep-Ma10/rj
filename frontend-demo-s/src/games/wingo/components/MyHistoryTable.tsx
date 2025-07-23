@@ -5,7 +5,8 @@ interface MyHistoryItem {
   period: string;
   betType: string; // e.g. "Green", "Digit 5", "BIG"
   amount: number;
-  result: "Win" | "Lose";
+  result?: "Win" | "Lose";
+  status?: string; // 'pending' or 'settled'
 }
 
 interface Props {
@@ -35,12 +36,16 @@ const MyHistoryTable: React.FC<Props> = ({ data }) => {
                 <td className="py-2 px-3">{item.period}</td>
                 <td className="py-2 px-3 font-semibold">{item.betType}</td>
                 <td className="py-2 px-3">₹{item.amount}</td>
-                <td
-                  className={`py-2 px-3 font-bold ${
-                    item.result === "Win" ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {item.result}
+                <td className="py-2 px-3 font-bold">
+                  {item.status === "pending" ? (
+                    <span className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">Pending</span>
+                  ) : item.result === "Win" ? (
+                    <span className="text-green-400">Win</span>
+                  ) : item.result === "Lose" ? (
+                    <span className="text-red-400">Lose</span>
+                  ) : (
+                    <span>-</span>
+                  )}
                 </td>
               </tr>
             ))}
