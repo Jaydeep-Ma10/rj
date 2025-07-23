@@ -5,7 +5,7 @@ import CountdownTimer from "./CountdownTimer";
 interface Props {
   selectedInterval: string;
   results: number[];
-  timePeriod: string;
+  timePeriod: string; // Already string, keep as string
   duration: number;
   roundLoading: boolean;
   roundError: string | null;
