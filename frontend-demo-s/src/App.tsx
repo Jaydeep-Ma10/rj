@@ -1,6 +1,9 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useState } from "react";
 import "./App.css";
+
+// User pages
 import Home from "./pages/Home";
 import Deposit from "./pages/Deposit";
 import Withdraw from "./pages/Withdraw";
@@ -13,18 +16,24 @@ import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Referral from "./pages/Referral";
 import Games from "./pages/Games";
-import WingoGame from "./games/wingo/WingoGame";
 import Activity from "./pages/Activity";
 import Wallet from "./pages/Wallet";
 import Account from "./pages/Account";
 import Landing from "./pages/Landing";
 
-import BottomNav from "./components/BottomNav";
-import { AuthProvider, useAuth } from "./hooks/useAuth";
-import { useState } from "react";
-import Notification from "./components/Notification";
+// Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+
+// Components
+import BottomNav from "./components/BottomNav";
+import Notification from "./components/Notification";
+
+// Auth
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+
+// ✅ Lazy load game component
+const WingoGame = lazy(() => import("./games/wingo/WingoGame"));
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -35,10 +44,11 @@ const AppRoutes = () => {
       <Notification message={notif.message} type={notif.type} onClose={() => setNotif({ message: "" })} />
       <BrowserRouter>
         <Routes>
-          {/* Admin routes always available */}
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          {/* User routes (conditional rendering for user state) */}
+
+          {/* User Routes */}
           {user ? (
             <>
               <Route path="/" element={<Home />} />
@@ -53,18 +63,30 @@ const AppRoutes = () => {
               <Route path="/callback" element={<Callback />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/referral" element={<Referral />} />
+
+              {/* Games with nested route */}
               <Route path="/games" element={<Games />}>
-                <Route path="wingo" element={<WingoGame />} />
+                <Route
+                  path="wingo"
+                  element={
+                    <Suspense fallback={<div className="text-white text-center">Loading Wingo...</div>}>
+                      <WingoGame />
+                    </Suspense>
+                  }
+                />
               </Route>
             </>
           ) : (
             <>
+              {/* Non-authenticated user routes */}
               <Route path="/*" element={<Landing />} />
               <Route path="/login" element={<Login setNotif={setNotif} />} />
               <Route path="/signup" element={<Signup setNotif={setNotif} />} />
             </>
           )}
         </Routes>
+
+        {/* BottomNav only if logged in */}
         {user && <BottomNav />}
       </BrowserRouter>
     </>

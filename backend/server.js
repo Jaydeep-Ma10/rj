@@ -28,9 +28,20 @@ const prisma = new PrismaClient();
 // Initialize Socket.IO
 export const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*', // Consider restricting this in production
-    methods: ['GET', 'POST']
-  }
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://rj-755j.onrender.com'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  path: '/socket.io/', 
+  transports: ['websocket', 'polling'],
+  allowEIO3: true, 
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  cookie: false
 });
 
 // Ensure uploads directory exists

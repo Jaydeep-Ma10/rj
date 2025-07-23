@@ -19,14 +19,21 @@ const Home = () => {
         {/* Games Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Win Go Card */}
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px]">
-            <img src="https://cdn-icons-png.flaticon.com/512/1040/1040231.png" alt="Win Go" className="w-12 h-12 mb-1" />
-            <h2 className="text-base font-bold mb-1 text-purple-700">Win Go</h2>
-            <p className="mb-1 text-gray-600 text-xs text-center">Play and win big!</p>
-            <Link to="/games/wingo" className="mt-auto">
-              <button className="bg-purple-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-purple-700 transition">Play Now</button>
-            </Link>
-          </div>
+          {/* Win Go Card - Updated with correct route */}
+<div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] hover:shadow-lg transition-shadow duration-300">
+  <img 
+    src="https://cdn-icons-png.flaticon.com/512/1040/1040231.png" 
+    alt="Win Go" 
+    className="w-12 h-12 mb-1"
+  />
+  <h2 className="text-base font-bold mb-1 text-purple-700">Win Go</h2>
+  {/* <p className="mb-1 text-gray-600 text-xs text-center">Predict the winning number and multiply your bet!</p> */}
+  <Link to="games/wingo" className="mt-auto w-full">
+    <button className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:opacity-90 transition-all">
+      Play Now
+    </button>
+  </Link>
+</div>
           {/* Game 2 - Coming Soon */}
           <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] opacity-70">
             <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" alt="Game 2" className="w-12 h-12 mb-1 grayscale" />

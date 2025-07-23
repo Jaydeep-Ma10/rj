@@ -1,8 +1,15 @@
 // src/pages/Deposit.tsx
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useAuth } from "../hooks/useAuth";
 
-const methods = [
+// Define types for the methods
+interface PaymentMethod {
+  id: string;
+  name: string;
+  details: Record<string, string>;
+}
+
+const methods: PaymentMethod[] = [
   {
     id: "paytm",
     name: "Paytm Pay",
@@ -41,150 +48,155 @@ const methods = [
 ];
 
 const Deposit = () => {
-  const [selected, setSelected] = useState<any>(null);
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    mobile: "",
-    amount: "",
-    utr: "",
-    slip: null as File | null,
-  });
+  const [selected, setSelected] = useState<PaymentMethod | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [amount, setAmount] = useState('');
+  const [utr, setUtr] = useState('');
+  const [slip, setSlip] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: any) => {
-    const { name, value, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: files ? files[0] : value,
-    }));
-  };
-
-
-  const [submitStatus, setSubmitStatus] = useState<string | null>(null);
-
-  const [submitting, setSubmitting] = useState(false);
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitStatus(null);
-    setSubmitting(true);
+    if (!selected || !amount || !utr) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
-      const fd = new FormData();
-      fd.append("name", user?.name || "");
-      fd.append("mobile", formData.mobile);
-      fd.append("amount", formData.amount);
-      fd.append("utr", formData.utr);
-      if (formData.slip) fd.append("slip", formData.slip);
-      if (selected?.id) fd.append("method", selected.name);
-      const res = await fetch("https://rj-755j.onrender.com/api/manual-deposit", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Submission failed");
-      setSubmitStatus("success");
-      setFormData({ mobile: "", amount: "", utr: "", slip: null });
-      setSelected(null);
-    } catch (err: any) {
-      let msg = "Submission failed. Please try again or check your internet connection.";
-      if (err instanceof Response) {
-        try {
-          const data = await err.json();
-          if (data.errors && data.errors.length > 0) {
-            msg = data.errors.map((e: any) => e.msg).join(", ");
-          } else if (data.error) {
-            msg = data.error;
-          }
-        } catch {}
+      const formData = new FormData();
+      formData.append('name', user?.name || '');
+      formData.append('mobile', user?.mobile || '');
+      formData.append('amount', amount);
+      formData.append('utr', utr);
+      if (slip) {
+        formData.append('slip', slip);
       }
-      setSubmitStatus(msg);
+      if (selected?.id) {
+        formData.append('method', selected.name);
+      }
+      
+      const response = await fetch('https://rj-755j.onrender.com/api/manual-deposit', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Deposit request failed');
+      }
+      
+      // Handle success
+      alert('Deposit request submitted successfully!');
+      setAmount('');
+      setUtr('');
+      setSlip(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-center">
-        Select Payment Method
-      </h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {methods.map((method) => (
-          <div
-            key={method.id}
-            className="border p-4 rounded-lg shadow cursor-pointer hover:bg-gray-100"
-            onClick={() => setSelected(method)}
-          >
-            <h3 className="text-lg font-semibold">{method.name}</h3>
-          </div>
-        ))}
-      </div>
-
-      {selected && (
-        <div className="mt-6 border p-4 rounded-lg bg-gray-50">
-          <h3 className="text-xl font-bold mb-2">Pay via {selected.name}</h3>
-          <ul className="mb-4 text-gray-700">
-            {Object.entries(selected.details).map(([key, value]) => (
-              <li key={key}>
-                <strong>{key.replace(/([A-Z])/g, " $1")}: </strong>
-                {value}
-              </li>
-            ))}
-          </ul>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="w-full p-2 border rounded bg-gray-100 text-gray-700 font-semibold cursor-not-allowed">
-              Name: {user?.name || "-"}
-            </div>
-            <input
-              type="tel"
-              name="mobile"
-              placeholder="Mobile Number"
-              value={formData.mobile}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="number"
-              name="amount"
-              placeholder="Amount Paid"
-              value={formData.amount}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="text"
-              name="utr"
-              placeholder="Transaction ID / UTR"
-              value={formData.utr}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="file"
-              name="slip"
-              accept="image/*"
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            />
-
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-              disabled={submitting}
-            >
-              {submitting ? "Submitting..." : "Submit Payment Confirmation"}
-            </button>
-            {submitStatus === "success" && (
-              <div className="mt-3 text-green-700 text-center font-semibold">Payment submitted! Awaiting admin approval.</div>
-            )}
-            {submitStatus && submitStatus !== "success" && (
-              <div className="mt-3 text-red-700 text-center font-semibold">{typeof submitStatus === 'string' ? submitStatus : 'Submission failed. Please try again.'}</div>
-            )}
-          </form>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h1 className="text-2xl font-bold mb-6">Deposit Funds</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
       )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Select Payment Method</h2>
+          <div className="space-y-2">
+            {methods.map((method) => (
+              <div 
+                key={method.id}
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selected?.id === method.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                }`}
+                onClick={() => setSelected(method)}
+              >
+                <h3 className="font-medium">{method.name}</h3>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {selected && (
+          <div className="border p-6 rounded-lg bg-gray-50">
+            <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
+            
+            <div className="mb-6 space-y-2">
+              <h3 className="font-medium">{selected.name}</h3>
+              <div className="bg-white p-4 rounded border">
+                {Object.entries(selected.details).map(([key, value]) => (
+                  <div key={key} className="mb-2">
+                    <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter amount"
+                  min="1"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Transaction ID / UTR
+                </label>
+                <input
+                  type="text"
+                  value={utr}
+                  onChange={(e) => setUtr(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter transaction ID / UTR"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Payment Proof (Screenshot/Receipt)
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setSlip(e.target.files?.[0] || null)}
+                  className="w-full p-2 border rounded"
+                  accept="image/*,.pdf"
+                  required
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full py-2 px-4 rounded text-white font-medium ${
+                  isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {isSubmitting ? 'Processing...' : 'Submit Payment'}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
