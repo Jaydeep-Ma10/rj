@@ -1,6 +1,6 @@
 import { useAuth } from "../hooks/useAuth";
-import TransactionHistory from "./TransactionHistory";
-import React, { useEffect, useState } from "react";
+
+import { useEffect, useState } from "react";
 
 const Account = () => {
   const { user, logout } = useAuth();

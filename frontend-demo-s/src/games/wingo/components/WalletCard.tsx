@@ -9,7 +9,7 @@ import { getSocket } from '../../../utils/socket';
 const WalletCard: React.FC = () => {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import AdminWithdrawals from "./AdminWithdrawals";
 
@@ -7,6 +7,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Paytm Pay");
+  const [dashboardTab, setDashboardTab] = useState<'deposits' | 'withdrawals'>('deposits');
 
   const paymentMethods = ["Paytm Pay", "PhonePe", "Google Pay", "Others"];
 
@@ -38,7 +39,7 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("adminToken");
       await api.post(`/admin/deposits/${id}/${action}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setDeposits((prev) => prev.map(d => d.id === id ? { ...d, status: action === "verify" ? "approved" : "rejected" } : d));
+      setDeposits((prev: any[]) => prev.map((d: any) => d.id === id ? { ...d, status: action === "verify" ? "approved" : "rejected" } : d));
     } catch {
       alert("Action failed");
     }
@@ -49,8 +50,6 @@ const AdminDashboard = () => {
     window.location.href = "/admin/login";
   };
 
-  const [dashboardTab, setDashboardTab] = useState<'deposits' | 'withdrawals'>('deposits');
-  // ... rest of code ...
   return (
     <div className="max-w-5xl mx-auto mt-10 bg-white p-8 rounded shadow relative">
       <button

@@ -1,6 +1,6 @@
 // src/games/wingo/components/HeaderBar.tsx
-import { ArrowLeft, Headphones, Wallet } from 'lucide-react';
-import { Button } from '../components/ui/Button';
+import { ArrowLeft, Headphones } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 // import logo from '../assets/logo.png';
 

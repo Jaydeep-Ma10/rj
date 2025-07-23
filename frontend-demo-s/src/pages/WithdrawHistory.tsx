@@ -1,5 +1,5 @@
 import { useAuth } from "../hooks/useAuth";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const WithdrawHistory = () => {
   const { user } = useAuth();

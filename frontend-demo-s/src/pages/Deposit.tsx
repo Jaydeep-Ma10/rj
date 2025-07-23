@@ -1,5 +1,6 @@
 // src/pages/Deposit.tsx
-import { useState, FormEvent } from "react";
+import type { FormEvent } from "react";
+import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 // Define types for the methods

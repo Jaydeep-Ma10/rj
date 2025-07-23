@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import HeaderBar from "./components/HeaderBar";
 import WalletCard from "./components/WalletCard";
 import AdBanner from "./components/AdBanner";
@@ -26,20 +26,43 @@ const WingoGame = () => {
   const [selectedInterval, setSelectedInterval] = useState("WinGo 30sec");
 
   // Backend data integration
-  const [gameHistoryData, setGameHistoryData] = useState([]);
-  const [chartData, setChartData] = useState([]); // For now, use same as history
-  const [myHistoryData, setMyHistoryData] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [loadingMyHistory, setLoadingMyHistory] = useState(false);
-  const [errorHistory, setErrorHistory] = useState(null);
-  const [errorMyHistory, setErrorMyHistory] = useState(null);
+  interface HistoryItem {
+    id: string;
+    period: string;
+    number: number;
+    status?: string;
+  }
+  const [gameHistoryData, setGameHistoryData] = useState<HistoryItem[]>([] as HistoryItem[]);
+  const [chartData, setChartData] = useState<any[]>([]); // For now, use same as history
+  interface MyHistoryItem {
+    id: string;
+    period: string;
+    betType: string;
+    amount: number;
+    result?: "Win" | "Lose";
+    status?: string;
+  }
+  const [myHistoryData, setMyHistoryData] = useState<MyHistoryItem[]>([] as MyHistoryItem[]); 
+
 
   // Backend-driven round/timer state
-  const [currentRound, setCurrentRound] = useState(null);
+  interface Round {
+    id: string;
+    period: string;
+    endTime: string;
+    [key: string]: any;
+  }
+  const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [roundLoading, setRoundLoading] = useState(false);
   const [roundError, setRoundError] = useState(null);
   const [timerDuration, setTimerDuration] = useState(30);
   const [timerPeriod, setTimerPeriod] = useState("");
+
+  // Backend data integration
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingMyHistory, setLoadingMyHistory] = useState(false);
+  const [errorHistory, setErrorHistory] = useState<string | null>(null);
+  const [errorMyHistory, setErrorMyHistory] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch game history
@@ -49,7 +72,7 @@ const WingoGame = () => {
         if (!res.ok) throw new Error("Failed to fetch game history");
         const data = await res.json();
         // Map backend data to include status for badge
-        const mapped = (Array.isArray(data) ? data : data.history || []).map((item, i) => ({
+        const mapped = (Array.isArray(data) ? data : data.history || []).map((item: any, i: number) => ({
           id: item.period || String(i),
           period: item.period,
           number: item.resultNumber,
@@ -91,25 +114,39 @@ const WingoGame = () => {
   }, [selectedInterval]);
 
   useEffect(() => {
-    // Fetch my bet history
-    if (!user?.id) return;
-    setLoadingMyHistory(true);
-    fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch my bet history");
-        const data = await res.json();
-        // Map status for badge: pending if result is null/undefined
-        const mapped = (Array.isArray(data) ? data : data.bets || []).map((item, i) => ({
-          ...item,
-          id: item.betId || String(i),
-          status: item.resultNumber == null ? "pending" : "settled",
-          result:
-            item.win === true ? "Win" : item.win === false ? "Lose" : undefined,
-        }));
-        setMyHistoryData(mapped);
-      })
-      .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
-      .finally(() => setLoadingMyHistory(false));
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const fetchMyBets = () => {
+      if (!user?.id) return;
+      setLoadingMyHistory(true);
+      fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Failed to fetch my bet history");
+          const data = await res.json();
+          // Map status for badge: pending if result is null/undefined
+          const mapped: MyHistoryItem[] = Array.isArray(data.bets)
+            ? data.bets.map((item: any, i: number) => ({
+                ...item,
+                id: item.betId !== undefined ? String(item.betId) : item.period !== undefined ? String(item.period) : String(i),
+                period: item.period ? String(item.period) : String(i),
+                betType: item.betType || '',
+                amount: typeof item.amount === 'number' ? item.amount : 0,
+                status: item.status === "-" ? "pending" : "settled",
+                result: item.status === "Win" ? "Win" : item.status === "Lose" ? "Lose" : undefined,
+              })
+            )
+            : [] as MyHistoryItem[];
+          setMyHistoryData(mapped);
+        })
+        .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
+        .finally(() => setLoadingMyHistory(false));
+    };
+    fetchMyBets();
+    if (user?.id) {
+      intervalId = setInterval(fetchMyBets, 10000); // Poll every 10 seconds
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [user?.id]);
 
   const handleOpenBet = (option: string) => {
@@ -175,7 +212,19 @@ const WingoGame = () => {
               .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to fetch my bet history");
                 const data = await res.json();
-                setMyHistoryData(data.bets || []);
+                const mapped: MyHistoryItem[] = Array.isArray(data.bets)
+                  ? data.bets.map((item: any, i: number) => ({
+                      ...item,
+                      id: item.betId !== undefined ? String(item.betId) : item.period !== undefined ? String(item.period) : String(i),
+                      period: item.period ? String(item.period) : String(i),
+                      betType: item.betType || '',
+                      amount: typeof item.amount === 'number' ? item.amount : 0,
+                      status: item.status === "-" ? "pending" : "settled",
+                      result: item.status === "Win" ? "Win" : item.status === "Lose" ? "Lose" : undefined,
+                    })
+                  )
+                  : [] as MyHistoryItem[];
+                setMyHistoryData(mapped);
               })
               .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
               .finally(() => setLoadingMyHistory(false));
@@ -220,7 +269,13 @@ const WingoGame = () => {
       </div>
 
       {/* Conditionally Rendered Sections */}
-      {activeTab === "game" && <GameHistoryTable history={gameHistoryData} />}
+      {activeTab === "game" && (
+        <>
+          {loadingHistory && <div className="text-gray-400 text-center my-2">Loading game history...</div>}
+          {errorHistory && <div className="text-red-400 text-center my-2">{errorHistory}</div>}
+          <GameHistoryTable history={gameHistoryData} />
+        </>
+      )}
 
       {activeTab === "chart" &&  <GameChart data={chartData} />
       //  (
@@ -230,13 +285,13 @@ const WingoGame = () => {
       // )
       }
 
-      {activeTab === "my" && <MyHistoryTable data={myHistoryData} />
-      
-      
-        // <div className="bg-[#1e2d5c] text-white p-4 mt-4 rounded-lg">
-        //   <h2 className="text-center text-lg font-bold">🧾 My History Coming Soon</h2>
-        // </div>
-      }
+      {activeTab === "my" && (
+        <>
+          {loadingMyHistory && <div className="text-gray-400 text-center my-2">Loading my bets...</div>}
+          {errorMyHistory && <div className="text-red-400 text-center my-2">{errorMyHistory}</div>}
+          <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
+        </>
+      )}
     </div>
   );
 };

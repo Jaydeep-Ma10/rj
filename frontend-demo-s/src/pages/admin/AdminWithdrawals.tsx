@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../utils/api";
 
 const AdminWithdrawals = () => {
@@ -27,7 +27,7 @@ const AdminWithdrawals = () => {
     try {
       const token = localStorage.getItem("adminToken");
       await api.post(`/admin/withdrawals/${id}/${action}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setWithdrawals((prev) => prev.map(w => w.id === id ? { ...w, status: action === "verify" ? "approved" : "rejected" } : w));
+      setWithdrawals((prev: any[]) => prev.map((w: any) => w.id === id ? { ...w, status: action === "verify" ? "approved" : "rejected" } : w));
     } catch {
       alert("Action failed");
     }

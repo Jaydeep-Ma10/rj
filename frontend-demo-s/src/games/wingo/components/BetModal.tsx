@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import MultiplierGrid from "./MultiplierGrid";
+
 
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -19,12 +19,12 @@ const BetModal: React.FC<BetModalProps> = ({
   onSuccess,
 }) => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [amount, setAmount] = useState(1);
-  const [quantity, setQuantity] = useState(1);
-  const [multiplier, setMultiplier] = useState(1);
-  const [agree, setAgree] = useState(false);
+  const [amount, setAmount] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [multiplier] = useState<number>(1);
+  const [agree, setAgree] = useState<boolean>(false);
 
   const total = amount * quantity * multiplier;
   const presetAmounts = [1, 10, 100, 1000];
