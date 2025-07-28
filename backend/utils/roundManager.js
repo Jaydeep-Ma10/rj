@@ -125,18 +125,27 @@ async function createNextRound(label, durationMs) {
     const ts = startTime;
     const nextPeriod = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}${pad(ts.getMilliseconds(), 3)}`;
     
-    // Create the new round
+    // Find the latest serialNumber for this interval
+    const latestSerial = await tx.wingoRound.findFirst({
+      where: { interval: label },
+      orderBy: { serialNumber: 'desc' },
+      select: { serialNumber: true }
+    });
+    const nextSerial = latestSerial && latestSerial.serialNumber ? latestSerial.serialNumber + 1 : 1;
+
+    // Create the new round with serialNumber
     const newRound = await tx.wingoRound.create({
       data: {
         period: String(nextPeriod),
         interval: label,
+        serialNumber: nextSerial,
         startTime,
         endTime,
         status: 'pending'
       }
     });
     
-    console.log(`[${now.toLocaleTimeString()}] Created round for ${label} period ${nextPeriod}`);
+    console.log(`[${now.toLocaleTimeString()}] Created round for ${label} period ${nextPeriod} (serial ${nextSerial})`);
     return newRound;
   });
 }

@@ -279,6 +279,7 @@ export const getGameHistory = async (req, res) => {
       return {
         period: r.period,
         interval: r.interval,
+        serialNumber: r.serialNumber,
         resultNumber: r.resultNumber,
         resultBigSmall,
         resultColor,
@@ -334,6 +335,7 @@ export const getMyBets = async (req, res) => {
         userName: bet.user?.name,
         period: bet.round?.period,
         interval: bet.round?.interval,
+        serialNumber: bet.round?.serialNumber,
         betType: bet.type,
         betValue: bet.value,
         amount: bet.amount,

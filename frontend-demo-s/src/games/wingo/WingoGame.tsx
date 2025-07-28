@@ -73,8 +73,8 @@ const WingoGame = () => {
         const data = await res.json();
         // Map backend data to include status for badge
         const mapped = (Array.isArray(data) ? data : data.history || []).map((item: any, i: number) => ({
-          id: item.period || String(i),
-          period: item.period,
+          id: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period || String(i)),
+          period: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period || String(i)),
           number: item.resultNumber,
           status: item.resultNumber == null ? "pending" : "settled",
           ...item,
@@ -123,11 +123,11 @@ const WingoGame = () => {
           if (!res.ok) throw new Error("Failed to fetch my bet history");
           const data = await res.json();
           // Map status for badge: pending if result is null/undefined
-          const mapped: MyHistoryItem[] = Array.isArray(data.bets)
-            ? data.bets.map((item: any, i: number) => ({
+          const mapped: MyHistoryItem[] = Array.isArray(data)
+            ? data.map((item: any, i: number) => ({
                 ...item,
-                id: item.betId !== undefined ? String(item.betId) : item.period !== undefined ? String(item.period) : String(i),
-                period: item.period ? String(item.period) : String(i),
+                id: item.betId !== undefined ? String(item.betId) : ((item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period !== undefined ? String(item.period) : String(i))),
+                period: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period ? String(item.period) : String(i)),
                 betType: item.betType || '',
                 amount: typeof item.amount === 'number' ? item.amount : 0,
                 status: item.status === "-" ? "pending" : "settled",
