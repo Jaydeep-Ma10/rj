@@ -157,16 +157,14 @@ const WingoGame = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#121d45] p-4 space-y-4">
+    <div className="min-h-screen bg-[#121d45] p-2 md:p-4 space-y-2 md:space-y-4 w-full">
       <HeaderBar />
       <WalletCard />
       <AdBanner />
-      {/* <TimeSelector /> */}
       <TimeSelector
-  selected={selectedInterval}
-  onSelect={(label) => setSelectedInterval(label)}
-/>
-
+        selected={selectedInterval}
+        onSelect={(label) => setSelectedInterval(label)}
+      />
 
       <GameHeaderCard
         selectedInterval={selectedInterval}
@@ -177,7 +175,8 @@ const WingoGame = () => {
         roundError={roundError}
       />
 
-     <div className="bg-[#1e2d5c] p-4 rounded-xl shadow-md space-y-6 mt-4"> <BetOptions onSelect={(color) => handleOpenBet(color)} />
+      <div className="bg-[#1e2d5c] p-2 md:p-4 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 max-w-md mx-auto w-full">
+        <BetOptions onSelect={(color) => handleOpenBet(color)} />
 
       <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
 
@@ -200,7 +199,7 @@ const WingoGame = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedOption={selectedBet}
-        roundId={currentRound?.id || null}
+        roundId={currentRound?.id ? Number(currentRound.id) : null}
         onSuccess={() => {
           // Refresh wallet and my bet history after successful bet
           // 1. Dispatch a custom event for WalletCard to refresh

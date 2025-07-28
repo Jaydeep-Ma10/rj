@@ -12,12 +12,12 @@ const BetOptions: React.FC<BetOptionsProps> = ({ onSelect }) => {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-4 mt-4">
+    <div className="w-full grid grid-cols-3 gap-2 md:gap-4 mt-2 md:mt-4">
       {colors.map((btn) => (
         <div
           key={btn.value}
           onClick={() => onSelect(btn.value as "green" | "red" | "violet")}
-          className={`text-white text-center py-2 rounded-xl text-lg font-semibold shadow-md cursor-pointer transition-transform hover:scale-105 ${btn.className}`}
+          className={`text-white text-center py-1 md:py-2 rounded-xl text-base md:text-lg font-semibold shadow-md cursor-pointer transition-transform hover:scale-105 ${btn.className}`}
         >
           {btn.label}
         </div>

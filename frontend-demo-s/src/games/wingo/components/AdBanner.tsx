@@ -3,7 +3,7 @@ import { FaVolumeUp } from "react-icons/fa";
 
 const AdBanner: React.FC = () => {
   return (
-    <div className="flex items-center gap-3 bg-[#1e2d5c] text-white p-3 mt-3 rounded-lg shadow-sm">
+    <div className="flex items-center gap-3 bg-[#1e2d5c] text-white p-3 rounded-lg shadow-sm">
       <FaVolumeUp />
       <p className="text-sm flex-1">
         Please be sure to always use our official website for playing the games

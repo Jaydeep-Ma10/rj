@@ -40,7 +40,6 @@ const DigitGrid: React.FC<Props> = ({ onSelectDigit }) => {
     <div className="grid grid-cols-5 gap-4 mt-6">
       {digits.map((digit) => {
         const style = getDigitStyle(digit);
-
         return (
           <div
             key={digit}

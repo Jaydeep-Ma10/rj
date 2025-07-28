@@ -20,15 +20,15 @@ const GameHeaderCard: React.FC<Props> = ({
   roundError,
 }) => {
   return (
-    <div className="flex flex-col md:flex-row gap-3 mt-4">
+    <div className="flex flex-col md:flex-row gap-2 md:gap-3 mt-2 md:mt-4 w-full">
       <HowToPlayCard selectedInterval={selectedInterval} results={results} />
       {roundLoading ? (
-        <div className="bg-[#1e2d5c] p-3 rounded-lg w-full md:w-1/2 text-center shadow-md flex items-center justify-center min-h-[90px]">
-          <span className="text-yellow-400 font-bold">Loading round...</span>
+        <div className="bg-[#1e2d5c] p-2 md:p-3 rounded-lg w-full md:w-1/2 text-center shadow-md flex items-center justify-center min-h-[70px] md:min-h-[90px]">
+          <span className="text-yellow-400 font-bold text-sm md:text-base">Loading round...</span>
         </div>
       ) : roundError ? (
-        <div className="bg-[#1e2d5c] p-3 rounded-lg w-full md:w-1/2 text-center shadow-md flex items-center justify-center min-h-[90px]">
-          <span className="text-red-400 font-bold">{roundError}</span>
+        <div className="bg-[#1e2d5c] p-2 md:p-3 rounded-lg w-full md:w-1/2 text-center shadow-md flex items-center justify-center min-h-[70px] md:min-h-[90px]">
+          <span className="text-red-400 font-bold text-sm md:text-base">{roundError}</span>
         </div>
       ) : (
         <CountdownTimer duration={duration} timePeriod={timePeriod} />

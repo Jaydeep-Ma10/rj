@@ -21,16 +21,14 @@ const getColorClass = (num: number) => {
 const GameChart: React.FC<Props> = ({ data }) => {
   return (
     <div className="bg-[#1e2d5c] p-4 mt-4 rounded-xl text-white">
-      <h2 className="text-lg font-bold mb-4">📊 Recent Results Chart</h2>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4">📊 Recent Results Chart</h2>
+      <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2">
         {data.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center justify-center min-w-[60px] rounded-full w-[60px] h-[60px] ${getColorClass(
-              item.number
-            )}`}
+            className={`flex flex-col items-center justify-center w-[36px] h-[36px] sm:w-[48px] sm:h-[48px] md:w-[60px] md:h-[60px] rounded-full ${getColorClass(item.number)}`}
           >
-            <div className="text-xl font-bold">{item.number}</div>
+            <div className="text-base sm:text-lg md:text-xl font-bold">{item.number}</div>
             <div className="text-[10px] mt-1 opacity-70">{item.period.slice(-6)}</div>
           </div>
         ))}

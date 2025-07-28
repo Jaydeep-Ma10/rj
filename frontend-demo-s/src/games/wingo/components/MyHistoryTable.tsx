@@ -15,10 +15,10 @@ interface Props {
 
 const MyHistoryTable: React.FC<Props> = ({ data }) => {
   return (
-    <div className="bg-[#1e2d5c] text-white rounded-xl p-4 mt-4">
-      <h2 className="text-lg font-bold mb-4">🧾 My Bet History</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm table-auto">
+    <div className="bg-[#1e2d5c] text-white rounded-xl p-1 sm:p-2 md:p-4 mt-2 md:mt-4">
+      <h2 className="text-base md:text-lg font-bold mb-2 md:mb-4"> My Bet History</h2>
+      <div className="overflow-x-auto gap-2 md:gap-4">
+        <table className="w-full min-w-[320px] sm:min-w-[400px] text-[11px] sm:text-xs md:text-sm table-auto">
           <thead>
             <tr className="bg-[#293b6a] text-white">
               <th className="py-2 px-3 text-left">Period</th>

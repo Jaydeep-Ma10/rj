@@ -27,10 +27,10 @@ interface Props {
 
 const GameHistoryTable: React.FC<Props> = ({ history }) => {
   return (
-    <div className="bg-[#1e2d5c] text-white rounded-xl p-4 mt-4">
-      <h2 className="text-lg font-bold mb-4">📜 Game History</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm table-auto">
+    <div className="bg-[#1e2d5c] text-white rounded-xl p-1 sm:p-2 md:p-4 mt-2 md:mt-4">
+      <h2 className="text-base md:text-lg font-bold mb-2 md:mb-4"> Game History</h2>
+      <div className="overflow-x-auto gap-2 md:gap-4">
+        <table className="w-full min-w-[320px] sm:min-w-[400px] text-[11px] sm:text-xs md:text-sm table-auto">
           <thead>
             <tr className="bg-[#293b6a] text-white">
               <th className="py-2 px-3 text-left">Period</th>
@@ -46,15 +46,18 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
                 key={item.id}
                 className="border-b border-gray-700 hover:bg-[#33416d]"
               >
-                <td className="py-2 px-3">{item.period}</td>
-                <td className="py-2 px-3 font-bold">{item.number}</td>
-                <td className="py-2 px-3">{getBigSmall(item.number)}</td>
-                <td className="py-2 px-3">{getColor(item.number)}</td>
-                <td className="py-2 px-3">
+                <td className="py-1 px-2 md:py-2 md:px-3">
+                  <span className="block md:hidden">{item.period.slice(-6)}</span>
+                  <span className="hidden md:block">{item.period}</span>
+                </td>
+                <td className="py-1 px-2 md:py-2 md:px-3 font-bold">{item.number}</td>
+                <td className="py-1 px-2 md:py-2 md:px-3">{getBigSmall(item.number)}</td>
+                <td className="py-1 px-2 md:py-2 md:px-3">{getColor(item.number)}</td>
+                <td className="py-1 px-2 md:py-2 md:px-3">
                   {item.status === "pending" ? (
-                    <span className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">Ongoing</span>
+                    <span className="bg-yellow-400 text-black px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">Ongoing</span>
                   ) : (
-                    <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">Settled</span>
+                    <span className="bg-green-500 text-white px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">Settled</span>
                   )}
                 </td>
               </tr>

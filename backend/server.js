@@ -31,7 +31,8 @@ export const io = new SocketIOServer(httpServer, {
     origin: [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://rj-755j.onrender.com'
+      'https://rj-755j.onrender.com',
+      'https://resonant-youtiao-a8061f.netlify.app'
     ],
     methods: ['GET', 'POST'],
     credentials: true

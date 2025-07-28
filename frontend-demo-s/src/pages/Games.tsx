@@ -4,7 +4,7 @@ import { Link, Outlet } from "react-router-dom";
 
 const Games: React.FC = () => {
   return (
-    <div style={{padding:24}}>
+    <div style={{padding:0}}>
 
       <div style={{display:'flex',gap:12,marginBottom:24}}>
         <Link to="wingo"><button className="wingo-tab" aria-label="Go to Wingo" /></Link>

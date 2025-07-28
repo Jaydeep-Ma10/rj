@@ -55,14 +55,14 @@ const BetModal: React.FC<BetModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div
-        className="text-white p-6 rounded-xl w-[90%] max-w-md shadow-2xl"
-        style={{
-          background: getBackgroundColor(),
-          border: "2px solid white",
-          boxShadow: "0 0 20px rgba(0,0,0,0.5)",
-        }}
-      >
+  <div
+    className="text-white p-4 sm:p-6 rounded-xl w-full max-w-xs sm:max-w-md shadow-2xl overflow-y-auto max-h-[90vh]"
+    style={{
+      background: getBackgroundColor(),
+      border: "2px solid white",
+      boxShadow: "0 0 20px rgba(0,0,0,0.5)",
+    }}
+  >
         {/* Header */}
         <h2 className="text-xl font-bold mb-4 text-center">
           Selected: {selectedOption}

@@ -139,37 +139,30 @@ export const settleRound = async (req, res) => {
         resultNumber = pickWinningNumberForBet(bet);
       }
     } else {
-      // Multi-user: maximize house profit
-      let minPayout = Infinity;
-      let bestNumber = 0;
-      for (let n = 0; n < 10; n++) {
-        let payout = 0;
-        for (const bet of bets) {
-          if (bet.type === 'color') {
-            if ((bet.value === 'green' && [1,3,7,9].includes(n)) ||
-                (bet.value === 'red' && [2,4,6,8].includes(n)) ||
-                (bet.value === 'violet' && [0,5].includes(n))) {
-              payout += bet.amount * bet.multiplier * (bet.value === 'violet' ? 4.5 : 2);
-            }
-          }
-          if (bet.type === 'bigsmall') {
-            if ((bet.value === 'big' && [5,6,7,8,9].includes(n)) ||
-                (bet.value === 'small' && [0,1,2,3,4].includes(n))) {
-              payout += bet.amount * bet.multiplier * 2;
-            }
-          }
-          if (bet.type === 'number') {
-            if (parseInt(bet.value) === n) {
-              payout += bet.amount * bet.multiplier * 9;
-            }
-          }
+      // Multi-user: pick the digit with the lowest total bet amount (across all bet types)
+      let betSums = Array(10).fill(0); // betSums[digit] = total bet amount on digit
+      for (const bet of bets) {
+        const amount = bet.amount * bet.multiplier;
+        if (bet.type === 'color') {
+          if (bet.value === 'green') [1,3,7,9].forEach(d => betSums[d] += amount);
+          if (bet.value === 'red') [2,4,6,8].forEach(d => betSums[d] += amount);
+          if (bet.value === 'violet') [0,5].forEach(d => betSums[d] += amount);
         }
-        if (payout < minPayout) {
-          minPayout = payout;
-          bestNumber = n;
+        if (bet.type === 'bigsmall') {
+          if (bet.value === 'big') [5,6,7,8,9].forEach(d => betSums[d] += amount);
+          if (bet.value === 'small') [0,1,2,3,4].forEach(d => betSums[d] += amount);
+        }
+        if (bet.type === 'number') {
+          const digit = parseInt(bet.value);
+          if (!isNaN(digit) && digit >= 0 && digit <= 9) betSums[digit] += amount;
         }
       }
-      resultNumber = bestNumber;
+      // Find the digit(s) with the lowest bet sum
+      const minBet = Math.min(...betSums);
+      const candidates = betSums.map((sum, digit) => sum === minBet ? digit : null).filter(d => d !== null);
+      // If multiple digits have the same minimum, pick one randomly
+      resultNumber = candidates[Math.floor(Math.random() * candidates.length)];
+      // End of new logic
     }
     // Settle bets
     let updates = [];
