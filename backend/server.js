@@ -1,6 +1,29 @@
 // server.js
 import express from 'express';
 import cors from 'cors';
+
+// --- CORS FIX: Apply before any routes or imports ---
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://rj-755j.onrender.com',
+  'https://resonant-youtiao-a8061f.netlify.app'
+];
+
+// Must be before routes or dynamic imports!
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+};
+
+// If using express 4.x, apply directly to app
+// If using express 5.x, same
+// This must be before any app.use for routes
+
+// Place this right after express app is created:
+// const app = express();
+// app.use(cors(corsOptions));
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { createServer } from 'http';
@@ -16,10 +39,11 @@ dotenv.config();
 // Constants
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000; // Use Render/Heroku port or 10000 for local
 
 // Initialize Express and HTTP server
 const app = express();
+app.use(cors(corsOptions)); // <--- CORS applied before anything else
 const httpServer = createServer(app);
 
 // Initialize Prisma client
@@ -174,3 +198,8 @@ function configureMiddleware() {
 configureMiddleware();
 setupRoutes();
 initializeApp();
+
+httpServer.listen(PORT, () => {
+  const publicUrl = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
+  console.log(`🚀 Server running with Socket.io on ${publicUrl}`);
+});
