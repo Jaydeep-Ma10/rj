@@ -42,7 +42,7 @@ async function main() {
           if (bet.type === 'color') {
             if (
               (bet.value === 'green' && [1,3,7,9].includes(resultNumber)) ||
-              (bet.value === 'red' && [2,4,6,8,9].includes(resultNumber)) ||
+              (bet.value === 'red' && [2,4,6,8].includes(resultNumber)) ||
               (bet.value === 'violet' && [0,5].includes(resultNumber))
             ) win = true;
           } else if (bet.type === 'bigsmall') {
