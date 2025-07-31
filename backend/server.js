@@ -150,10 +150,8 @@ async function initializeApp() {
     });
 
     // 6. Start the server
-    httpServer.listen(PORT, () => {
-      console.log(`🚀 Server running with Socket.io on http://localhost:${PORT}`);
-      console.log('Round management system initialized');
-    });
+    // httpServer.listen(PORT, ...) REMOVED from here to avoid double listen error.
+    console.log('Round management system initialized');
 
   } catch (error) {
     console.error('❌ Failed to initialize application:', error);
@@ -199,6 +197,7 @@ configureMiddleware();
 setupRoutes();
 initializeApp();
 
+// Only call listen ONCE, here:
 httpServer.listen(PORT, () => {
   const publicUrl = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
   console.log(`🚀 Server running with Socket.io on ${publicUrl}`);
