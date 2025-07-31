@@ -24,7 +24,7 @@ model ManualDeposit {
 model User {
   id           Int      @id @default(autoincrement())
   name         String   @unique
-  mobile       String?
+  mobile       String   // Now required
   balance      Float    @default(0)
   password     String
   referralCode String   @unique
@@ -32,6 +32,8 @@ model User {
   createdAt    DateTime @default(now())
 
   wingoBets    WingoBet[]
+
+  @@index([mobile])
 }
 
 model WingoRound {
@@ -45,6 +47,10 @@ model WingoRound {
   resultNumber Int?     // winning number (0-9)
   resultAt     DateTime?
   bets         WingoBet[]
+
+  @@index([period])
+  @@index([interval])
+  @@index([serialNumber])
 }
 
 model WingoRoundAnalytics {
@@ -69,6 +75,10 @@ model WingoBet {
   createdAt  DateTime @default(now())
   win        Boolean? // null: not settled, true/false: result
   payout     Float?   // amount won (if any)
+
+  @@index([roundId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 
