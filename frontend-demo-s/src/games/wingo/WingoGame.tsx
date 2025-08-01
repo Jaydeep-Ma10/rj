@@ -17,6 +17,7 @@ import MyHistoryTable from "./components/MyHistoryTable";
 
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect } from "react";
+import { getSocket } from '../../utils/socket';
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -144,8 +145,19 @@ const WingoGame = () => {
     if (user?.id) {
       intervalId = setInterval(fetchMyBets, 10000); // Poll every 10 seconds
     }
+
+    // --- Socket.IO real-time update integration ---
+    const socket = getSocket();
+    const handleBetUpdate = () => {
+      fetchMyBets();
+    };
+    socket.on('bet:update', handleBetUpdate);
+    socket.on('round:settled', handleBetUpdate);
+
     return () => {
       if (intervalId) clearInterval(intervalId);
+      socket.off('bet:update', handleBetUpdate);
+      socket.off('round:settled', handleBetUpdate);
     };
   }, [user?.id]);
 

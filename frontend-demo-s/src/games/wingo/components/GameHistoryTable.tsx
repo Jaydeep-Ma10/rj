@@ -37,7 +37,7 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
               <th className="py-2 px-3 text-left">Number</th>
               <th className="py-2 px-3 text-left">Big/Small</th>
               <th className="py-2 px-3 text-left">Color</th>
-              <th className="py-2 px-3 text-left">Status</th>
+
             </tr>
           </thead>
           <tbody>
@@ -53,13 +53,7 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
                 <td className="py-1 px-2 md:py-2 md:px-3 font-bold">{item.number}</td>
                 <td className="py-1 px-2 md:py-2 md:px-3">{getBigSmall(item.number)}</td>
                 <td className="py-1 px-2 md:py-2 md:px-3">{getColor(item.number)}</td>
-                <td className="py-1 px-2 md:py-2 md:px-3">
-                  {item.status === "pending" ? (
-                    <span className="bg-yellow-400 text-black px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">Ongoing</span>
-                  ) : (
-                    <span className="bg-green-500 text-white px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">Settled</span>
-                  )}
-                </td>
+
               </tr>
             ))}
           </tbody>
