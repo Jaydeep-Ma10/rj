@@ -137,13 +137,29 @@ async function createNextRound(label, durationMs) {
     const ts = startTime;
     const nextPeriod = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}${pad(ts.getMilliseconds(), 3)}`;
     
-    // Find the latest serialNumber for this interval
+    // Find the latest serialNumber for this specific interval
     const latestSerial = await tx.wingoRound.findFirst({
-      where: { interval: label },
+      where: { 
+        interval: label,
+        serialNumber: { not: null } // Only consider rounds with serial numbers
+      },
       orderBy: { serialNumber: 'desc' },
       select: { serialNumber: true }
     });
-    const nextSerial = latestSerial && latestSerial.serialNumber ? latestSerial.serialNumber + 1 : 1;
+    
+    // Fallback: if no serial found, count total rounds for this interval
+    let nextSerial;
+    if (latestSerial?.serialNumber) {
+      nextSerial = latestSerial.serialNumber + 1;
+    } else {
+      // Count all rounds for this interval to determine next serial
+      const roundCount = await tx.wingoRound.count({
+        where: { interval: label }
+      });
+      nextSerial = roundCount + 1;
+    }
+    
+    console.log(`🔢 Serial for ${label}: latest=${latestSerial?.serialNumber || 'none'}, next=${nextSerial}`);
 
     // Create the new round with serialNumber
     const newRound = await tx.wingoRound.create({
