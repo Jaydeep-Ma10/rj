@@ -126,7 +126,7 @@ const AdminDashboard = () => {
               {(groupedDeposits[activeTab] || []).length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-8 text-gray-400">No requests for {activeTab}.</td></tr>
               ) : (
-                groupedDeposits[activeTab].map(d => (
+                groupedDeposits[activeTab]?.map(d => (
                   <tr key={d.id} className="border-b hover:bg-gray-50 transition">
                     <td className="py-2 px-2">{d.name}</td>
                     <td className="py-2 px-2">₹{d.amount}</td>

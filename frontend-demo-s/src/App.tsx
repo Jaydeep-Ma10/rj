@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useState } from "react";
 import "./App.css";
 
+// Test error - this should cause a TypeScript error
+// const testError: string = 123; // Type 'number' is not assignable to type 'string'
+
 // User pages
 import Home from "./pages/Home";
 import Deposit from "./pages/Deposit";
@@ -21,7 +24,7 @@ import Wallet from "./pages/Wallet";
 import Account from "./pages/Account";
 import Landing from "./pages/Landing";
 
-// Admin pages
+// Admin pagess
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
@@ -32,8 +35,10 @@ import Notification from "./components/Notification";
 // Auth
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
+
 // ✅ Lazy load game component
 const WingoGame = lazy(() => import("./games/wingo/WingoGame"));
+
 
 const AppRoutes = () => {
   const { user } = useAuth();

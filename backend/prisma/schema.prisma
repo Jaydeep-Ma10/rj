@@ -31,7 +31,8 @@ model User {
   referredBy   String?
   createdAt    DateTime @default(now())
 
-  wingoBets    WingoBet[]
+  wingoBets      WingoBet[]
+  passwordResets PasswordReset[]
 
   @@index([mobile])
 }
@@ -96,9 +97,24 @@ model ManualWithdraw {
   mobile        String
   amount        Float
   accountHolder String?
-accountNumber String?
-ifsc          String?
+  accountNumber String?
+  ifsc          String?
   status        String   @default("pending")
   userId        Int?
   createdAt     DateTime @default(now())
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  mobile    String
+  otp       String
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([mobile])
+  @@index([otp])
+  @@index([expiresAt])
 }

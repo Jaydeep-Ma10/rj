@@ -172,6 +172,7 @@ function setupRoutes() {
     { path: '/api', module: './routes/adminRoutes.js' },
     { path: '/api', module: './routes/userRoutes.js' },
     { path: '/api', module: './routes/authRoutes.js' },
+    { path: '/api/password-reset', module: './routes/passwordResetRoutes.js' },
     { path: '/api', module: './routes/manualWithdrawRoutes.js' },
     { path: '/api/wingo', module: './routes/wingoRoutes.js' },
     { path: '/admin', module: './routes/adminAuthRoutes.js' }
