@@ -42,6 +42,8 @@ function pickLosingNumberForBet(bet) {
 
 export async function createRoundsForAllIntervals() {
   try {
+    console.log('🔍 Checking rounds for all intervals:', INTERVALS.map(i => i.label));
+    
     // Get all pending rounds to check what we already have
     const pendingRounds = await prisma.wingoRound.findMany({
       where: {
@@ -50,9 +52,13 @@ export async function createRoundsForAllIntervals() {
       select: {
         interval: true,
         startTime: true,
-        endTime: true
+        endTime: true,
+        period: true
       }
     });
+    
+    console.log(`📊 Found ${pendingRounds.length} pending rounds:`, 
+      pendingRounds.map(r => `${r.interval}(${r.period})`));
 
     // Process each interval type
     for (const { label, durationMs } of INTERVALS) {
@@ -65,22 +71,28 @@ export async function createRoundsForAllIntervals() {
         round.endTime >= now
       );
       
+      console.log(`🎯 Interval ${label}: hasActiveRound=${hasActiveRound}`);
+      
       if (!hasActiveRound) {
         // Check if we need to create a new round
         const latestRound = await prisma.wingoRound.findFirst({
           where: { interval: label },
           orderBy: { endTime: 'desc' },
-          select: { endTime: true }
+          select: { endTime: true, period: true }
         });
         
+        const needsNewRound = !latestRound || latestRound.endTime < now;
+        console.log(`⏰ Interval ${label}: needsNewRound=${needsNewRound} (latest: ${latestRound?.period || 'none'})`);
+        
         // Only create a new round if the last one has ended or doesn't exist
-        if (!latestRound || latestRound.endTime < now) {
+        if (needsNewRound) {
+          console.log(`🚀 Creating new round for interval ${label}`);
           await createNextRound(label, durationMs);
         }
       }
     }
   } catch (error) {
-    console.error('Error in createRoundsForAllIntervals:', error);
+    console.error('❌ Error in createRoundsForAllIntervals:', error);
     throw error; // Re-throw to be caught by the calling function
   }
 }
@@ -251,7 +263,19 @@ export function initRoundManagement() {
   setTimeout(async () => {
     console.log('🔄 Checking for expired rounds from previous session...');
     await settleExpiredRounds();
-    await createRoundsForAllIntervals();
+    
+    // Force create rounds for all intervals on startup
+    console.log('🎯 Force creating rounds for all intervals on startup...');
+    for (const { label, durationMs } of INTERVALS) {
+      try {
+        console.log(`🚀 Force creating round for ${label}`);
+        await createNextRound(label, durationMs);
+      } catch (error) {
+        console.error(`❌ Failed to create ${label} round:`, error.message);
+      }
+    }
+    
+    console.log('✅ Startup round creation completed');
   }, 2000);
   
   // Check for new rounds every 10 seconds (aligned with round intervals)
