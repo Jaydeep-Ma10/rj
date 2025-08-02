@@ -205,7 +205,59 @@ export async function settleExpiredRounds() {
             resultNumber = pickLosingNumberForBet(bet);
           }
         } else {
-          resultNumber = Math.floor(Math.random() * 10);
+          // Multiple bets: Calculate total payout for each possible result (0-9)
+          // Pick the digit with the LOWEST total payout (house edge)
+          const payoutByDigit = {};
+          
+          for (let digit = 0; digit <= 9; digit++) {
+            let totalPayout = 0;
+            
+            for (const bet of bets) {
+              let wins = false;
+              let payout = 0;
+              
+              // Check if this bet wins with this digit
+              if (bet.type === 'color') {
+                if (
+                  (bet.value === 'green' && [1,3,7,9].includes(digit)) ||
+                  (bet.value === 'red' && [2,4,6,8,9].includes(digit)) ||
+                  (bet.value === 'violet' && [0,5].includes(digit))
+                ) {
+                  wins = true;
+                  payout = bet.amount * (bet.value === 'violet' ? 4.5 : 2);
+                }
+              } else if (bet.type === 'bigsmall') {
+                if (
+                  (bet.value === 'big' && [5,6,7,8,9].includes(digit)) ||
+                  (bet.value === 'small' && [0,1,2,3,4].includes(digit))
+                ) {
+                  wins = true;
+                  payout = bet.amount * 2;
+                }
+              } else if (bet.type === 'number') {
+                if (Number(bet.value) === digit) {
+                  wins = true;
+                  payout = bet.amount * 9;
+                }
+              }
+              
+              if (wins) totalPayout += payout;
+            }
+            
+            payoutByDigit[digit] = totalPayout;
+          }
+          
+          // Find digit with minimum payout (house edge)
+          const minPayout = Math.min(...Object.values(payoutByDigit));
+          const winnersWithMinPayout = Object.keys(payoutByDigit).filter(
+            digit => payoutByDigit[digit] === minPayout
+          );
+          
+          // If multiple digits have same min payout, pick randomly among them
+          resultNumber = parseInt(winnersWithMinPayout[Math.floor(Math.random() * winnersWithMinPayout.length)]);
+          
+          console.log(`🏠 House edge calculation:`, payoutByDigit);
+          console.log(`💰 Selected digit ${resultNumber} with payout ${minPayout}`);
         }
 
         // Settle all bets
