@@ -38,6 +38,10 @@ const WingoGame = lazy(() => import("./games/wingo/WingoGame"));
 const AppRoutes = () => {
   const { user } = useAuth();
   const [notif, setNotif] = useState<{ message: string; type?: "success" | "error" }>({ message: "" });
+  
+  // 🧪 TEMPORARY: Enable UI testing mode to bypass auth (remove in production)
+  const UI_TESTING_MODE = true; // Set to false to enable normal auth flow
+  const mockUser = UI_TESTING_MODE ? { id: "test", name: "Test User" } : null;
 
   return (
     <>
@@ -48,9 +52,10 @@ const AppRoutes = () => {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-          {/* User Routes */}
-          {user ? (
+          {/* 🧪 TEMPORARY: All routes accessible for UI testing (remove in production) */}
+          {UI_TESTING_MODE ? (
             <>
+              {/* Always show authenticated routes for UI testing */}
               <Route path="/" element={<Home />} />
               <Route path="/activity" element={<Activity />} />
               <Route path="/wallet" element={<Wallet />} />
@@ -75,19 +80,54 @@ const AppRoutes = () => {
                   }
                 />
               </Route>
+              
+              {/* Redirect any other path to home for testing */}
+              <Route path="/*" element={<Home />} />
             </>
           ) : (
             <>
-              {/* Non-authenticated user routes */}
-              <Route path="/*" element={<Landing />} />
-              <Route path="/login" element={<Login setNotif={setNotif} />} />
-              <Route path="/signup" element={<Signup setNotif={setNotif} />} />
+              {/* Normal auth flow - User Routes */}
+              {(user || mockUser) ? (
+                <>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/activity" element={<Activity />} />
+                  <Route path="/wallet" element={<Wallet />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/deposit" element={<Deposit />} />
+                  <Route path="/withdraw" element={<Withdraw />} />
+                  <Route path="/deposit-history" element={<DepositHistory />} />
+                  <Route path="/withdraw-history" element={<WithdrawHistory />} />
+                  <Route path="/all-transactions" element={<AllTransactions />} />
+                  <Route path="/callback" element={<Callback />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/referral" element={<Referral />} />
+
+                  {/* Games with nested route */}
+                  <Route path="/games" element={<Games />}>
+                    <Route
+                      path="wingo"
+                      element={
+                        <Suspense fallback={<div className="text-white text-center">Loading Wingo...</div>}>
+                          <WingoGame />
+                        </Suspense>
+                      }
+                    />
+                  </Route>
+                </>
+              ) : (
+                <>
+                  {/* Non-authenticated user routes */}
+                  <Route path="/*" element={<Landing />} />
+                  <Route path="/login" element={<Login setNotif={setNotif} />} />
+                  <Route path="/signup" element={<Signup setNotif={setNotif} />} />
+                </>
+              )}
             </>
           )}
         </Routes>
 
-        {/* BottomNav only if logged in */}
-        {user && <BottomNav />}
+        {/* BottomNav - show in UI testing mode or if logged in */}
+        {(UI_TESTING_MODE || user || mockUser) && <BottomNav />}
       </BrowserRouter>
     </>
   );

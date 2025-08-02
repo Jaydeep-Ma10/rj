@@ -169,7 +169,7 @@ const WingoGame = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#121d45] p-2 md:p-4 space-y-2 md:space-y-4 w-full">
+    <div className="min-h-screen bg-[#121d45] p-2 sm:p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4 lg:space-y-6 w-full">
       <HeaderBar />
       <WalletCard />
       <AdBanner />
@@ -187,7 +187,7 @@ const WingoGame = () => {
         roundError={roundError}
       />
 
-      <div className="bg-[#1e2d5c] p-2 md:p-4 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 max-w-md mx-auto w-full">
+      <div className="bg-[#1e2d5c] p-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full max-w-2xl mx-auto">
         <BetOptions onSelect={(color) => handleOpenBet(color)} />
 
       <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
@@ -244,47 +244,78 @@ const WingoGame = () => {
       />
 
       {/* Tab Switcher Buttons */}
-      <div className="flex justify-around mt-6">
-        <button
-          onClick={() => setActiveTab("game")}
-          className={`text-sm px-4 py-2 rounded-full font-semibold ${
-            activeTab === "game"
-              ? "bg-yellow-400 text-black"
-              : "bg-gray-600 text-white"
-          }`}
-        >
-          Game History
-        </button>
+      <div className="bg-[#1e2d5c] rounded-xl p-2 mt-6">
+        <div className="flex justify-around space-x-1">
+          <button
+            onClick={() => setActiveTab("game")}
+            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+              activeTab === "game"
+                ? "bg-yellow-400 text-black shadow-lg scale-105"
+                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+            }`}
+          >
+            <div className="flex flex-col items-center space-y-1">
+              <span className="text-lg">🎮</span>
+              <span className="text-xs sm:text-sm">Game History</span>
+            </div>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("chart")}
-          className={`text-sm px-4 py-2 rounded-full font-semibold ${
-            activeTab === "chart"
-              ? "bg-yellow-400 text-black"
-              : "bg-gray-600 text-white"
-          }`}
-        >
-          Chart
-        </button>
+          <button
+            onClick={() => setActiveTab("chart")}
+            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+              activeTab === "chart"
+                ? "bg-yellow-400 text-black shadow-lg scale-105"
+                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+            }`}
+          >
+            <div className="flex flex-col items-center space-y-1">
+              <span className="text-lg">📊</span>
+              <span className="text-xs sm:text-sm">Chart</span>
+            </div>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("my")}
-          className={`text-sm px-4 py-2 rounded-full font-semibold ${
-            activeTab === "my"
-              ? "bg-yellow-400 text-black"
-              : "bg-gray-600 text-white"
-          }`}
-        >
-          My History
-        </button>
+          <button
+            onClick={() => setActiveTab("my")}
+            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+              activeTab === "my"
+                ? "bg-yellow-400 text-black shadow-lg scale-105"
+                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+            }`}
+          >
+            <div className="flex flex-col items-center space-y-1">
+              <span className="text-lg">📋</span>
+              <span className="text-xs sm:text-sm">My History</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Conditionally Rendered Sections */}
       {activeTab === "game" && (
         <>
-          {loadingHistory && <div className="text-gray-400 text-center my-2">Loading game history...</div>}
-          {errorHistory && <div className="text-red-400 text-center my-2">{errorHistory}</div>}
-          <GameHistoryTable history={gameHistoryData} />
+          {loadingHistory && (
+            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
+              <div className="flex flex-col items-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                <p className="text-gray-300 text-sm">Loading game history...</p>
+              </div>
+            </div>
+          )}
+          {errorHistory && (
+            <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-2xl">⚠️</span>
+                <p className="text-sm">{errorHistory}</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+          {!loadingHistory && !errorHistory && <GameHistoryTable history={gameHistoryData} />}
         </>
       )}
 
@@ -298,9 +329,29 @@ const WingoGame = () => {
 
       {activeTab === "my" && (
         <>
-          {loadingMyHistory && <div className="text-gray-400 text-center my-2">Loading my bets...</div>}
-          {errorMyHistory && <div className="text-red-400 text-center my-2">{errorMyHistory}</div>}
-          <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
+          {loadingMyHistory && (
+            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
+              <div className="flex flex-col items-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                <p className="text-gray-300 text-sm">Loading your bet history...</p>
+              </div>
+            </div>
+          )}
+          {errorMyHistory && (
+            <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-2xl">⚠️</span>
+                <p className="text-sm">{errorMyHistory}</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+          {!loadingMyHistory && !errorMyHistory && <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />}
         </>
       )}
     </div>

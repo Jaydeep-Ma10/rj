@@ -1,15 +1,27 @@
 #root {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
-  padding: 0 0.5rem 0.5rem 0.5rem; /* No top padding, keep side/bottom */
+  padding: 0 0.25rem 4rem 0.25rem; /* Bottom padding for BottomNav */
   text-align: center;
+}
+
+@media (min-width: 640px) {
+  #root {
+    padding: 0 0.5rem 4rem 0.5rem;
+  }
 }
 
 @media (min-width: 768px) {
   #root {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 0 2rem 2rem 2rem; /* No top padding on desktop too */
+    padding: 0 1rem 4rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #root {
+    padding: 0 2rem 4rem 2rem;
   }
 }
 

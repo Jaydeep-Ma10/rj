@@ -245,14 +245,22 @@ let isProcessing = {
 
 // Initialize the round management system
 export function initRoundManagement() {
-  // Create initial rounds on startup with a small delay to let the server fully start
-  setTimeout(createRoundsForAllIntervals, 1000);
+  console.log('🎮 Initializing round management system...');
+  
+  // Settle any expired rounds from previous session (important for Render restarts)
+  setTimeout(async () => {
+    console.log('🔄 Checking for expired rounds from previous session...');
+    await settleExpiredRounds();
+    await createRoundsForAllIntervals();
+  }, 2000);
   
   // Check for new rounds every 10 seconds (aligned with round intervals)
   const createRoundsInterval = setInterval(() => {
     if (!isProcessing.createRounds) {
       isProcessing.createRounds = true;
-      createRoundsForAllIntervals().finally(() => {
+      createRoundsForAllIntervals().catch(error => {
+        console.error('❌ Error creating rounds:', error);
+      }).finally(() => {
         isProcessing.createRounds = false;
       });
     }
@@ -262,7 +270,9 @@ export function initRoundManagement() {
   const settleRoundsInterval = setInterval(() => {
     if (!isProcessing.settleRounds) {
       isProcessing.settleRounds = true;
-      settleExpiredRounds().finally(() => {
+      settleExpiredRounds().catch(error => {
+        console.error('❌ Error settling rounds:', error);
+      }).finally(() => {
         isProcessing.settleRounds = false;
       });
     }

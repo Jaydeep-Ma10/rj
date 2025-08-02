@@ -136,6 +136,10 @@ async function initializeApp() {
     const { initRoundManagement } = await import('./utils/roundManager.js');
     const cleanupRoundManagement = initRoundManagement();
     
+    // 5. Initialize keep-alive for Render free tier
+    const { initKeepAlive } = await import('./utils/keepAlive.js');
+    initKeepAlive();
+    
     // 5. Set up graceful shutdown
     const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
     shutdownSignals.forEach(signal => {
@@ -163,6 +167,7 @@ async function initializeApp() {
 function setupRoutes() {
   // Import routes dynamically
   const routes = [
+    { path: '/api', module: './routes/healthRoutes.js' },
     { path: '/api', module: './routes/manualDepositRoutes.js' },
     { path: '/api', module: './routes/adminRoutes.js' },
     { path: '/api', module: './routes/userRoutes.js' },
