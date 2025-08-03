@@ -2,19 +2,12 @@
 import express from 'express';
 import cors from 'cors';
 
-// --- CORS FIX: Apply before any routes or imports ---
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://rj-755j.onrender.com',
-  'https://resonant-youtiao-a8061f.netlify.app'
-];
-
-// Must be before routes or dynamic imports!
+// --- CORS Configuration ---
 const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
+  origin: '*', // Allow all origins for testing
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 };
 
 // If using express 4.x, apply directly to app
