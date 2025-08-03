@@ -189,6 +189,14 @@ function configureMiddleware() {
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // Serve static files from public directory
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Route to serve the password reset test page
+  app.get('/password-reset-test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'password-reset-test.html'));
+  });
 }
 
 // Start the application
