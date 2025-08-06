@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { Volume2 } from "lucide-react";
 import { AiFillFire } from "react-icons/ai";
+import { messages } from "@/utils/constants"; // Adjust the import path as necessary
+import { useNavigate } from "react-router-dom";
 
 const AdBanner = () => {
-  const messages = [
-    "Welcome to the Tiranga Games! Greetings, Gamers and Enthusiasts! The Tiranga Games is more than just a platform for gaming. We invite you to join us, you'll find a variety of games, promo, bonus, luxury gold awards, Register now and win.",
-    "Please be sure to always use our official website for playing the games with the following link, https://tirangacasino.win. Please always check our official link to access our website and avoid scammers and phishing links",
-    "If your deposit not receive, please send it directly to Tiranga Games Self-service Center (https://www.tirangaservice.com) wait till already get process, do not send to another person and trust anyone claiming to represent Tiranga Games. Always verify our website authenticity through the official community channels. Your safety and trust is our priority."
-  ];
+  const navigate = useNavigate();
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -42,8 +40,8 @@ const AdBanner = () => {
           </p>
         </div>
       </div>
-      
-      <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-xs flex items-center gap-1 flex-shrink-0 transition-colors">
+
+      <button onClick={() => navigate("/announcement")} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-xs flex items-center gap-1 flex-shrink-0 transition-colors">
         <AiFillFire  className="w-3 h-3" />
         Detail
       </button>

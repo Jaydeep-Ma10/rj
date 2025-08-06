@@ -31,6 +31,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 // Components
 import BottomNav from "./components/BottomNav";
 import Notification from "./components/Notification";
+import Announcement from "./components/Announcement";
 
 // Auth
 import { AuthProvider, useAuth } from "./hooks/useAuth";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
               <Route path="/callback" element={<Callback />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/referral" element={<Referral />} />
+              <Route path="/announcement" element={<Announcement />} />
 
               {/* Games with nested route */}
               <Route path="/games" element={<Games />}>
