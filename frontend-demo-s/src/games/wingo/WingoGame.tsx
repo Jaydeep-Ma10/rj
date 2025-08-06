@@ -291,11 +291,11 @@ const WingoGame = () => {
       />
 
       {/* Tab Switcher Buttons */}
-      <div className=" rounded-xl p-2 mt-6">
-        <div className="flex justify-around space-x-1">
+      <div className=" rounded-xl mt-6 m-4">
+        <div className="flex justify-between items-center gap-2">
           <button
             onClick={() => setActiveTab("game")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "game"
                 ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
                 : "bg-[#374992] text-gray-400 hover:bg-gray-600/70 hover:scale-102"
@@ -308,7 +308,7 @@ const WingoGame = () => {
 
           <button
             onClick={() => setActiveTab("chart")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "chart"
                 ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
                 : "bg-[#374992] text-white hover:bg-gray-600/70 hover:scale-102"
@@ -321,7 +321,7 @@ const WingoGame = () => {
 
           <button
             onClick={() => setActiveTab("my")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "my"
                 ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
                 : "bg-[#374992] text-white hover:bg-gray-600/70 hover:scale-102"
