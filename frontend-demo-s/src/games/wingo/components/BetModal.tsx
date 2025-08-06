@@ -26,7 +26,7 @@ const BetModal: React.FC<BetModalProps> = ({
   const [multiplier] = useState<number>(1);
   const [agree, setAgree] = useState<boolean>(false);
 
-  const total = amount * quantity * multiplier;
+  const total = amount * quantity;
   const presetAmounts = [1, 10, 100, 1000];
 
   if (!isOpen) return null;
@@ -110,12 +110,15 @@ const BetModal: React.FC<BetModalProps> = ({
         {/* <MultiplierGrid onSelect={(m) => setMultiplier(m)} /> */}
         <div className="grid grid-cols-6 gap-3 mt-4 w-full">
   {[1, 5, 10, 20, 50, 100].map((m) => (
-    <div
+    <button
       key={m}
+      onClick={() => {
+        setQuantity(m);
+      }}
       className="px-2 py-2 rounded-full text-center text-white font-bold text-sm cursor-pointer bg-[#1e2d5c] hover:bg-yellow-400 hover:text-black transition"
     >
       {m}x
-    </div>
+    </button>
   ))}
 </div>
 
