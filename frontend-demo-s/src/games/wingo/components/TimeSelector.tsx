@@ -1,8 +1,8 @@
 // src/games/wingo/components/TimeSelector.tsx
 import React from "react";
-import { FaClock } from "react-icons/fa";
+import { clock, nonClock } from "@/assets/images";
 
-const timeOptions = ["WinGo 30sec", "WinGo 1 Min", "WinGo 3 Min", "WinGo 5 Min"];
+const timeOptions = ["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min"];
 
 interface Props {
   selected: string;
@@ -10,21 +10,24 @@ interface Props {
 }
 
 const TimeSelector: React.FC<Props> = ({ selected, onSelect }) => {
+  console.log(selected);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+    <div className="flex justify-center items-center mt-3 w-full bg-[#374992] rounded-xl">
       {timeOptions.map((label) => (
         <div
           key={label}
           onClick={() => onSelect(label)}
-          className={`flex flex-col items-center justify-center py-3 rounded-xl cursor-pointer transition-all text-sm font-semibold
-            ${
-              selected === label
-                ? "bg-blue-500 text-white shadow-lg"
-                : "bg-[#1e2d5c] text-white"
-            }`}
+          className={`flex flex-col items-center justify-center flex-1 h-24 cursor-pointer transition-all text-sm font-semibold 
+    ${
+      selected === label
+        ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg rounded-xl"
+        : "text-gray-400 bg-transparent"
+    }`}
         >
-          <FaClock size={18} className="mb-1" />
-          <span>{label}</span>
+          <img src={selected === label ? clock : nonClock} className="w-10 h-10" />
+          <span className="text-xs font-Bold leading-tight w-10">
+          {label}
+          </span>
         </div>
       ))}
     </div>

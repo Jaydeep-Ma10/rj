@@ -1,7 +1,7 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useState } from "react";
-import "./App.css";
+// import "./App.css";
 
 // Test error - this should cause a TypeScript error
 // const testError: string = 123; // Type 'number' is not assignable to type 'string'

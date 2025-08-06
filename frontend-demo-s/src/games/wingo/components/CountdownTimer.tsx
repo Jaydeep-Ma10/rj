@@ -16,16 +16,33 @@ const CountdownTimer: React.FC<Props> = ({ duration, timePeriod }) => {
   }, [duration]);
 
   const formatTime = (sec: number) =>
-    `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, "0")}`;
+    `${Math.floor(sec / 60)
+      .toString()
+      .padStart(2, "0")}:${(sec % 60).toString().padStart(2, "0")}`;
+
+  const timeString = formatTime(timeLeft); // e.g., "00:05"
 
   return (
-    <div className="bg-[#1e2d5c] p-3 rounded-lg w-full md:w-1/2 text-center shadow-md">
-      <h2 className="text-white text-sm mb-2">⏳ Time Remaining</h2>
-      <p className="text-2xl text-yellow-400 font-bold mb-2">
-        {formatTime(timeLeft)}
-      </p>
-      <p className="text-xs text-gray-300">Time Period</p>
-      <p className="text-white text-sm font-mono">{timePeriod}</p>
+    <div className="w-1/2 h-[102px] rounded-xl px-3 py-2 flex flex-col justify-center items-end text-right gap-1 font-bold">
+      <h2 className="text-white text-xs">Time remaining</h2>
+
+      <div className="flex items-end justify-center gap-1 mb-2">
+        {timeString.split("").map((char, index) => (
+          <div
+            key={index}
+            className={`h-8 flex items-center justify-center text-lg font-bold  text-[#F0F1F5] bg-[#2B3270] ${
+              char === ":" ? "w-4" : "w-5"
+            }`}
+          >
+            {char}
+          </div>
+        ))}
+      </div>
+
+      {/* Time Period Text */}
+      <div className="text-[15px] font-bold text-gray-300">
+        <p className="text-white font-semibold">{timePeriod}</p>
+      </div>
     </div>
   );
 };

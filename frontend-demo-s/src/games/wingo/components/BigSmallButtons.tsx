@@ -13,23 +13,23 @@ const BigSmallButtons: React.FC<Props> = ({ onSelect }) => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4 mt-6">
-      <div
+    <div className="flex justify-center items-center mt-6 shadow-md w-full pb-2 px-4">
+      <button
         onClick={() => handleSelect("big")}
-        className={`text-white font-bold text-lg py-3 rounded-full text-center cursor-pointer shadow-md transition-transform hover:scale-105 ${
-          selected === "big" ? "bg-yellow-400 text-black" : "bg-orange-400"
-        }`}
+        className={`w-full px-6 py-2 text-white font-bold text-base text-center cursor-pointer transition-transform hover:scale-105 ${
+          selected === "big" ? "bg-[#DD9138]" : "bg-[#DD9138]"
+        } rounded-l-full`}
       >
         BIG
-      </div>
-      <div
+      </button>
+      <button
         onClick={() => handleSelect("small")}
-        className={`text-white font-bold text-lg py-3 rounded-full text-center cursor-pointer shadow-md transition-transform hover:scale-105 ${
-          selected === "small" ? "bg-yellow-400 text-black" : "bg-sky-400"
-        }`}
+        className={`w-full px-6 py-2 text-white font-bold text-base text-center cursor-pointer transition-transform hover:scale-105 ${
+          selected === "small" ? "bg-[#5088D3]" : "bg-[#5088D3]"
+        } rounded-r-full`}
       >
         SMALL
-      </div>
+      </button>
     </div>
   );
 };
