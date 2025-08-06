@@ -50,8 +50,8 @@ const getNumberGradientClass = (num: number): string => {
 };
 
 const getBigSmall = (num: number) => {
-  if ([6, 7, 8, 9].includes(num)) return "Big";
-  if ([1, 2, 3, 4].includes(num)) return "Small";
+  if ([5, 6, 7, 8, 9].includes(num)) return "Big";
+  if ([1, 2, 3, 4, 5].includes(num)) return "Small";
   return "-";
 };
 
