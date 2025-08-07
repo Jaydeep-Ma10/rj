@@ -32,6 +32,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import BottomNav from "./components/BottomNav";
 import Notification from "./components/Notification";
 import Announcement from "./components/Announcement";
+import AllGames from "./components/AllGames";  
 
 // Auth
 import { AuthProvider, useAuth } from "./hooks/useAuth";
@@ -78,6 +79,7 @@ const AppRoutes = () => {
 
               {/* Games with nested route */}
               <Route path="/games" element={<Games />}>
+                <Route path="all/:category" element={<AllGames />} />
                 <Route
                   path="wingo"
                   element={

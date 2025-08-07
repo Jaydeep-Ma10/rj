@@ -7,7 +7,7 @@ const Announcement = () => {
   const navigate = useNavigate();
 
   return (
-    <div>
+    <>
       <div className="relative flex items-center justify-center w-full text-white px-2 py-3 bg-[#2B3270]">
         {/* Left Icon */}
         <ArrowLeft
@@ -54,7 +54,7 @@ const Announcement = () => {
           </p>
         </div>
       </div>
-    </div>
+    </>
 
     
   );
