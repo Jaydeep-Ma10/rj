@@ -75,7 +75,7 @@ const WalletCard: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="flex gap-12">
-        <Button className="bg-[#D23838] hover:bg-red-600 text-white px-6 py-[3.5px] rounded-full font-semibold" onClick={() => navigate('/withdraw')}>
+        <Button className="bg-red-500 hover:bg-red-600 text-white px-6 py-[3.5px] rounded-full font-semibold" onClick={() => navigate('/withdraw')}>
           Withdraw
         </Button>
         <Button className="bg-[#17B15E] hover:bg-green-600 text-white px-8 py-[3.5px] rounded-full font-semibold" onClick={() => navigate('/deposit')}>
