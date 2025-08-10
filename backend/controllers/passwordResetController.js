@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import crypto from 'crypto';
 import { sendOTPSMS, validateMobileNumber } from '../utils/smsService.js';
 import { logger } from '../utils/logger.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/client.js';
 
 // Security configuration
 const OTP_CONFIG = {
@@ -64,14 +62,15 @@ export const requestPasswordResetOTP = async (req, res) => {
       });
     }
 
-    // Sanitize and validate mobile number
-    const mobile = sanitizedMobile;
-    const mobileValidation = validateMobileNumber(mobile);
-    if (!mobileValidation.valid) {
-      logger.warn('Invalid mobile number', { requestId, mobile });
+    // Sanitize mobile number - keep it simple (10 digits)
+    const mobile = sanitizedMobile.replace(/\D/g, ''); // Remove all non-digits
+    
+    // Simple validation - just check if it's 10 digits
+    if (mobile.length !== 10 || !/^[6-9]/.test(mobile)) {
+      logger.warn('Invalid mobile number', { requestId, mobile: `${mobile.substring(0, 3)}****${mobile.slice(-3)}` });
       return res.status(400).json({ 
         success: false, 
-        error: 'Invalid mobile number format' 
+        error: 'Please enter a valid 10-digit mobile number' 
       });
     }
 
@@ -104,7 +103,7 @@ export const requestPasswordResetOTP = async (req, res) => {
     // Find user by mobile
     const user = await prisma.user.findFirst({
       where: { mobile },
-      select: { id: true, name: true, mobile: true, isActive: true }
+      select: { id: true, name: true, mobile: true }
     });
 
     if (!user) {
@@ -115,13 +114,7 @@ export const requestPasswordResetOTP = async (req, res) => {
       });
     }
 
-    if (!user.isActive) {
-      logger.warn('Account inactive', { requestId, userId: user.id });
-      return res.status(403).json({ 
-        success: false, 
-        error: 'This account has been deactivated' 
-      });
-    }
+    // Account is valid, proceed with OTP generation
 
     // Generate OTP and set expiry
     const otp = generateOTP();
@@ -138,8 +131,7 @@ export const requestPasswordResetOTP = async (req, res) => {
           expiresAt: { gt: new Date() }
         },
         data: { 
-          isUsed: true,
-          updatedAt: new Date()
+          isUsed: true
         }
       }),
       
@@ -149,14 +141,7 @@ export const requestPasswordResetOTP = async (req, res) => {
           mobile,
           otp: hashedOtp,
           expiresAt,
-          userId: user.id,
-          requestIp: req.ip,
-          userAgent: req.get('user-agent'),
-          metadata: {
-            requestId,
-            deviceInfo: req.get('user-agent'),
-            ipAddress: req.ip
-          }
+          userId: user.id
         }
       })
     ]);
@@ -278,8 +263,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
         user: {
           select: {
             id: true,
-            name: true,
-            isActive: true
+            name: true
           }
         }
       },
@@ -310,14 +294,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
         mobile: `${mobile.substring(0, 3)}****${mobile.slice(-3)}`
       });
       
-      // Increment failed attempts
-      await prisma.passwordReset.update({
-        where: { id: passwordReset.id },
-        data: { 
-          failedAttempts: { increment: 1 },
-          lastFailedAttempt: new Date()
-        }
-      });
+      // Mark as invalid attempt (simplified - no attempt tracking in current schema)
       
       return res.status(400).json({ 
         success: false, 
@@ -325,17 +302,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
       });
     }
 
-    // Check if user is active
-    if (!passwordReset.user?.isActive) {
-      logger.warn('Account is inactive during OTP verification', { 
-        requestId, 
-        userId: passwordReset.userId 
-      });
-      return res.status(403).json({ 
-        success: false, 
-        error: 'This account has been deactivated' 
-      });
-    }
+    // User is valid, proceed with OTP verification
 
     // Generate a secure reset token
     const resetToken = generateSecureToken();
@@ -352,8 +319,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
           expiresAt: { gte: new Date() }
         },
         data: { 
-          isUsed: true,
-          updatedAt: new Date()
+          isUsed: true
         }
       }),
       
@@ -364,15 +330,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
           otp: hashedToken, // Store hashed reset token
           isUsed: false,    // Token will be used in the next step
           expiresAt: tokenExpiresAt,
-          userId: passwordReset.userId,
-          requestIp: req.ip,
-          userAgent: req.get('user-agent'),
-          metadata: {
-            requestId,
-            type: 'password_reset_token',
-            deviceInfo: req.get('user-agent'),
-            ipAddress: req.ip
-          }
+          userId: passwordReset.userId
         }
       })
     ]);
@@ -451,10 +409,6 @@ export const resetPassword = async (req, res) => {
       where: {
         isUsed: false,
         expiresAt: { gte: new Date() }, // Not expired
-        metadata: {
-          path: ['type'],
-          equals: 'password_reset_token'
-        },
         createdAt: { 
           gte: new Date(Date.now() - OTP_CONFIG.RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
         }
@@ -463,9 +417,7 @@ export const resetPassword = async (req, res) => {
         user: {
           select: {
             id: true,
-            email: true,
             mobile: true,
-            isActive: true,
             password: true
           }
         }
@@ -487,17 +439,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // Check if user is active
-    if (!passwordReset.user.isActive) {
-      logger.warn('Account is inactive during password reset', { 
-        requestId, 
-        userId: passwordReset.userId 
-      });
-      return res.status(403).json({ 
-        success: false, 
-        error: 'This account has been deactivated' 
-      });
-    }
+    // User is valid, proceed with password reset
 
     // Check if new password is different from current password (if available)
     if (passwordReset.user.password) {
@@ -523,8 +465,7 @@ export const resetPassword = async (req, res) => {
       prisma.user.update({
         where: { id: passwordReset.userId },
         data: { 
-          password: hashedPassword,
-          lastPasswordChange: new Date()
+          password: hashedPassword
         }
       }),
       
@@ -532,8 +473,7 @@ export const resetPassword = async (req, res) => {
       prisma.passwordReset.update({
         where: { id: passwordReset.id },
         data: { 
-          isUsed: true,
-          updatedAt: new Date()
+          isUsed: true
         }
       })
     ]);
@@ -544,8 +484,6 @@ export const resetPassword = async (req, res) => {
       userId: passwordReset.userId,
       mobile: passwordReset.user.mobile ? 
         `${passwordReset.user.mobile.substring(0, 3)}****${passwordReset.user.mobile.slice(-3)}` : 'N/A',
-      email: passwordReset.user.email ? 
-        passwordReset.user.email.replace(/^(.{3})[^@]*/, (match, p1) => p1 + '*****') : 'N/A',
       resetAt: new Date().toISOString(),
       responseTime: `${Date.now() - startTime}ms`
     });

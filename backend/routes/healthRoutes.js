@@ -13,11 +13,11 @@ router.get('/health', async (req, res) => {
     // Check if round management is working
     const recentRound = await prisma.wingoRound.findFirst({
       where: {
-        createdAt: {
+        startTime: {
           gte: new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { startTime: 'desc' }
     });
 
     res.json({

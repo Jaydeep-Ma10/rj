@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enhanced File Upload Model for S3 Integration
+model FileUpload {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique // S3 object key
+  bucket      String   // S3 bucket name
+  fileName    String   // Original file name
+  fileType    String   // MIME type
+  fileSize    Int      // In bytes
+  uploadType  String   // 'deposit_slip', 'kyc_document', 'profile_image'
+  status      String   @default("pending") // pending, verified, rejected
+  userId      Int?
+  user        User?    @relation("UserFileUploads", fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  manualDeposits ManualDeposit[] @relation("DepositSlipUpload")
+  kycDocuments   User[]          @relation("UserKycDocument")
+
+  @@index([userId])
+  @@index([uploadType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Enhanced ManualDeposit Model
+model ManualDeposit {
+  id           Int         @id @default(autoincrement())
+  name         String
+  mobile       String
+  amount       Float
+  utr          String
+  method       String?
+  slipUrl      String?     // Legacy field - keep for backward compatibility
+  slipUploadId Int?        // New S3 reference
+  slipUpload   FileUpload? @relation("DepositSlipUpload", fields: [slipUploadId], references: [id])
+  verified     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  status       String      @default("pending") // pending, approved, rejected
+  userId       Int?
+  user         User?       @relation(fields: [userId], references: [id])
+  
+  // Admin tracking
+  verifiedBy   Int?        // Admin ID who verified
+  verifiedAt   DateTime?
+  rejectedBy   Int?        // Admin ID who rejected
+  rejectedAt   DateTime?
+  notes        String?     // Admin notes
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([mobile])
+}
+
+// Enhanced User Model
+model User {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  mobile         String
+  balance        Float           @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  password       String
+  referralCode   String          @unique
+  referredBy     String?
+  
+  // Security enhancements
+  loginAttempts  Int             @default(0)
+  lockedUntil    DateTime?       // Account lockout
+  lastActive     DateTime?       // Track user activity
+  isActive       Boolean         @default(true)
+  emailVerified  Boolean         @default(false)
+  mobileVerified Boolean         @default(false)
+  
+  // KYC and compliance
+  kycStatus      String          @default("not_verified") // not_verified, pending, verified, rejected
+  kycDocumentId  Int?
+  kycDocument    FileUpload?     @relation("UserKycDocument", fields: [kycDocumentId], references: [id])
+  kycSubmittedAt DateTime?
+  kycVerifiedAt  DateTime?
+  
+  // Terms and privacy
+  termsAcceptedAt    DateTime?
+  privacyAcceptedAt  DateTime?
+  marketingConsent   Boolean     @default(false)
+  
+  // Relations
+  passwordResets     PasswordReset[]
+  wingoBets          WingoBet[]
+  manualDeposits     ManualDeposit[]
+  manualWithdrawals  ManualWithdraw[]
+  fileUploads        FileUpload[] @relation("UserFileUploads")
+  auditLogs          AuditLog[]
+  sessions           UserSession[]
+
+  @@index([mobile])
+  @@index([kycStatus])
+  @@index([isActive])
+  @@index([lastActive])
+}
+
+// User Session Management
+model UserSession {
+  id          String   @id @default(cuid())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  token       String   @unique
+  ipAddress   String?
+  userAgent   String?
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Audit Log Model
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  action      String    // 'login', 'deposit', 'withdraw', 'bet', 'kyc_submit'
+  userId      Int?
+  user        User?     @relation(fields: [userId], references: [id])
+  adminId     Int?      // If action performed by admin
+  admin       Admin?    @relation(fields: [adminId], references: [id])
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?     // Additional context (bet amount, transaction ID, etc.)
+  status      String    // success, failed, pending
+  error       String?   // Error message if failed
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([adminId])
+  @@index([action])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Enhanced WingoRound Model
+model WingoRound {
+  id           Int        @id @default(autoincrement())
+  period       String     @unique
+  interval     String
+  startTime    DateTime
+  endTime      DateTime
+  status       String     @default("pending") // pending, active, completed, cancelled
+  resultNumber Int?
+  resultAt     DateTime?
+  serialNumber Int?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // House edge tracking
+  totalBets    Float      @default(0)
+  totalPayout  Float      @default(0)
+  houseProfit  Float      @default(0)
+  
+  bets         WingoBet[]
+  analytics    WingoRoundAnalytics?
+
+  @@index([period])
+  @@index([interval])
+  @@index([serialNumber])
+  @@index([status])
+  @@index([startTime])
+}
+
+// Enhanced WingoRoundAnalytics Model
+model WingoRoundAnalytics {
+  id          Int        @id @default(autoincrement())
+  roundId     Int        @unique
+  round       WingoRound @relation(fields: [roundId], references: [id])
+  totalBets   Float
+  totalPayout Float
+  profit      Float
+  playerCount Int        // Number of unique players
+  betCount    Int        // Total number of bets
+  createdAt   DateTime   @default(now())
+
+  @@index([roundId])
+  @@index([createdAt])
+}
+
+// Enhanced WingoBet Model
+model WingoBet {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  roundId    Int
+  type       String     // color, number, big, small
+  value      String     // red, green, violet, 0-9, big, small
+  amount     Float
+  multiplier Int
+  createdAt  DateTime   @default(now())
+  win        Boolean?
+  payout     Float?
+  
+  // Enhanced tracking
+  ipAddress  String?
+  userAgent  String?
+  
+  round      WingoRound @relation(fields: [roundId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([roundId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([win])
+}
+
+// Enhanced Admin Model
+model Admin {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  email     String?   @unique
+  role      String    @default("admin") // admin, super_admin, moderator
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  lastLogin DateTime?
+  
+  // Security
+  loginAttempts Int      @default(0)
+  lockedUntil   DateTime?
+  
+  // Relations
+  auditLogs AuditLog[]
+
+  @@index([username])
+  @@index([isActive])
+}
+
+// Enhanced ManualWithdraw Model
+model ManualWithdraw {
+  id            Int      @id @default(autoincrement())
+  name          String
+  mobile        String
+  amount        Float
+  status        String   @default("pending") // pending, approved, rejected, processing
+  userId        Int?
+  user          User?    @relation(fields: [userId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Bank details
+  accountHolder String?
+  accountNumber String?
+  ifsc          String?
+  bankName      String?
+  
+  // Processing details
+  processedBy   Int?     // Admin ID
+  processedAt   DateTime?
+  rejectedBy    Int?     // Admin ID
+  rejectedAt    DateTime?
+  notes         String?  // Admin notes
+  transactionId String?  // Bank transaction ID
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([mobile])
+}
+
+// Enhanced PasswordReset Model
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  mobile    String
+  otp       String
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  
+  // Security tracking
+  attempts  Int      @default(0)
+  ipAddress String?
+  userAgent String?
+
+  @@index([mobile])
+  @@index([otp])
+  @@index([expiresAt])
+  @@index([isUsed])
+}
+
+// System Configuration Model
+model SystemConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedBy   Int?     // Admin ID
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([key])
+}
+
+// Rate Limiting Model
+model RateLimit {
+  id          Int      @id @default(autoincrement())
+  identifier  String   // IP address or user ID
+  action      String   // login, bet, otp_request
+  count       Int      @default(1)
+  windowStart DateTime
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([identifier, action, windowStart])
+  @@index([identifier, action])
+  @@index([expiresAt])
+}

@@ -20,6 +20,9 @@ function pickWinningNumberForBet(bet) {
     if (bet.value === 'small') return [0,1,2,3,4][Math.floor(Math.random()*5)];
   } else if (bet.type === 'number') {
     return parseInt(bet.value);
+  } else if (bet.type === 'random') {
+    // For random bet, generate a random digit and return it (winning scenario)
+    return Math.floor(Math.random() * 10);
   }
 }
 
@@ -37,6 +40,11 @@ function pickLosingNumberForBet(bet) {
   } else if (bet.type === 'number') {
     const nums = Array.from({length:10},(_,i)=>i).filter(n=>n!==parseInt(bet.value));
     return nums[Math.floor(Math.random()*nums.length)];
+  } else if (bet.type === 'random') {
+    // For random bet losing scenario, generate a random digit and pick a different one
+    const randomDigit = Math.floor(Math.random() * 10);
+    const otherDigits = Array.from({length:10},(_,i)=>i).filter(n=>n!==randomDigit);
+    return otherDigits[Math.floor(Math.random()*otherDigits.length)];
   }
 }
 
@@ -239,6 +247,15 @@ export async function settleExpiredRounds() {
                   wins = true;
                   payout = bet.amount * 9;
                 }
+              } else if (bet.type === 'random') {
+                // Random bet: Generate a random digit for this bet and check if it matches current digit
+                // For house edge calculation, we need to consider this bet could win on any digit
+                // So we treat it as if it has a 1/10 chance to win on each digit
+                const randomDigit = Math.floor(Math.random() * 10);
+                if (randomDigit === digit) {
+                  wins = true;
+                  payout = bet.amount * 9; // Same payout as number bet
+                }
               }
               
               if (wins) totalPayout += payout;
@@ -276,6 +293,11 @@ export async function settleExpiredRounds() {
             ) win = true;
           } else if (bet.type === 'number') {
             if (Number(bet.value) === resultNumber) win = true;
+          } else if (bet.type === 'random') {
+            // Random bet: Generate a random digit and check if it matches result
+            const randomDigit = Math.floor(Math.random() * 10);
+            console.log(`🎲 Random bet generated digit ${randomDigit} for bet ${bet.id}, result is ${resultNumber}`);
+            if (randomDigit === resultNumber) win = true;
           }
           
           if (win) {
@@ -285,6 +307,8 @@ export async function settleExpiredRounds() {
               payout = bet.amount * 2;
             } else if (bet.type === 'number') {
               payout = bet.amount * 9;
+            } else if (bet.type === 'random') {
+              payout = bet.amount * 9; // Same payout as number bet
             }
             await prisma.user.update({ 
               where: { id: bet.userId }, 

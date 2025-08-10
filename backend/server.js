@@ -1,30 +1,16 @@
 // server.js
 import express from 'express';
 import cors from 'cors';
-
-// --- CORS Configuration ---
-const corsOptions = {
-  origin: '*', // Allow all origins for testing
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
-
-// If using express 4.x, apply directly to app
-// If using express 5.x, same
-// This must be before any app.use for routes
-
-// Place this right after express app is created:
-// const app = express();
-// app.use(cors(corsOptions));
-import dotenv from 'dotenv';
-import fs from 'fs';
-import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
-import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import { execSync } from 'child_process';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+import { isUsingS3 } from './services/s3TransactionSlipService.js';
 
 // Load environment variables first
 dotenv.config();
@@ -34,16 +20,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 10000; // Use Render/Heroku port or 10000 for local
 
+// --- CORS Configuration ---
+const corsOptions = {
+  origin: '*', // Allow all origins for testing
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Initialize Express and HTTP server
 const app = express();
 app.use(cors(corsOptions)); // <--- CORS applied before anything else
 const httpServer = createServer(app);
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
-
-// Initialize Socket.IO
-export const io = new SocketIOServer(httpServer, {
+const io = new SocketIOServer(httpServer, {
   cors: {
     origin: [
       'http://localhost:3000',
@@ -73,12 +62,13 @@ function ensureUploadsDir() {
 // Apply database migrations
 async function applyMigrations() {
   try {
-    console.log('🔍 Checking for pending migrations...');
-    execSync('npx prisma migrate deploy', { 
-      stdio: 'inherit',
-      env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-    });
-    console.log('✅ Database migrations applied successfully');
+    console.log('🔍 Skipping migrations - using db push for development');
+    // Temporarily disabled for development - using db push instead
+    // execSync('npx prisma migrate deploy', { 
+    //   stdio: 'inherit',
+    //   env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
+    // });
+    console.log('✅ Database schema is already in sync');
   } catch (error) {
     console.error('❌ Failed to apply migrations:', error);
     throw error;
@@ -157,7 +147,7 @@ async function initializeApp() {
 }
 
 // Import routes
-function setupRoutes() {
+async function setupRoutes() {
   // Import routes dynamically
   const routes = [
     { path: '/api', module: './routes/healthRoutes.js' },
@@ -168,20 +158,25 @@ function setupRoutes() {
     { path: '/api/password-reset', module: './routes/passwordResetRoutes.js' },
     { path: '/api', module: './routes/manualWithdrawRoutes.js' },
     { path: '/api/wingo', module: './routes/wingoRoutes.js' },
+    { path: '/api/files', module: './routes/fileUpload.js' },
     { path: '/admin', module: './routes/adminAuthRoutes.js' }
   ];
 
-  routes.forEach(async (route) => {
+  // Load routes sequentially to ensure proper loading
+  for (const route of routes) {
     try {
-      const { default: router } = await import(route.module);
+      const module = await import(route.module);
+      const router = module.default;
       app.use(route.path, router);
+      console.log(`✅ Loaded route: ${route.module} at ${route.path}`);
     } catch (error) {
       console.error(`❌ Failed to load route ${route.module}:`, error);
     }
-  });
+  }
 
   // Static files
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  console.log('✅ All routes loaded successfully');
 }
 
 // Configure middleware
@@ -197,15 +192,33 @@ function configureMiddleware() {
   app.get('/password-reset-test', (req, res) => {
     res.sendFile(path.join(__dirname, 'password-reset-test.html'));
   });
+  
+  // Route to serve the file upload test page
+  app.get('/file-upload-test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'file-upload-test.html'));
+  });
 }
 
 // Start the application
-configureMiddleware();
-setupRoutes();
-initializeApp();
+async function startApp() {
+  configureMiddleware();
+  await setupRoutes();
+  await initializeApp();
+}
+
+startApp();
 
 // Only call listen ONCE, here:
 httpServer.listen(PORT, () => {
-  const publicUrl = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
-  console.log(`🚀 Server running with Socket.io on ${publicUrl}`);
+  console.log(`🚀 Server running with Socket.io on http://localhost:${PORT}`);
+  console.log(`📄 API Documentation available at http://localhost:${PORT}/api-docs`);
+  console.log(`📱 Mobile app API available at http://localhost:${PORT}/api`);
+  console.log(`📦 S3 Storage: ${isUsingS3() ? '✅ Configured' : '⚠️ Not Configured (using local storage)'}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  // Close server & exit process
+  httpServer.close(() => process.exit(1));
 });

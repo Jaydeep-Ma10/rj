@@ -8,45 +8,58 @@ datasource db {
 }
 
 model ManualDeposit {
-  id        Int      @id @default(autoincrement())
-  name      String
-  mobile    String
-  amount    Float
-  utr       String
-  method    String?
-  slipUrl   String?
-  verified  Boolean  @default(false)
-  status    String   @default("pending") // pending, approved, rejected
-  userId    Int?
-  createdAt DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  name            String
+  mobile          String
+  amount          Float
+  utr             String
+  method          String?
+  slipUrl         String?
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  status          String   @default("pending")
+  userId          Int?
+  user            User?    @relation(fields: [userId], references: [id])
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  metadata        Json?    // Store S3 keys, file upload IDs, and other metadata
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  mobile       String   // Now required
-  balance      Float    @default(0)
-  password     String
-  referralCode String   @unique
-  referredBy   String?
-  createdAt    DateTime @default(now())
-
-  wingoBets      WingoBet[]
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  mobile         String
+  balance        Float           @default(0)
+  createdAt      DateTime        @default(now())
+  password       String
+  referralCode   String          @unique
+  referredBy     String?
   passwordResets PasswordReset[]
+  wingoBets      WingoBet[]
+  fileUploads    FileUpload[]    // Files uploaded by this user
+  auditLogs      AuditLog[]      // Audit trail for this user
+  kycDocuments   KycDocument[]   // KYC documents for this user
+  userActivities UserActivity[]  // Activity log for this user
+  manualDeposits ManualDeposit[] // Manual deposits by this user
 
   @@index([mobile])
 }
 
 model WingoRound {
-  serialNumber Int? // Serial number per interval, for human-friendly IDs
-  id           Int      @id @default(autoincrement())
-  period       String   @unique // e.g. 20250709100030261
-  interval     String   // '30s', '1m', '3m', '5m'
+  id           Int        @id @default(autoincrement())
+  period       String     @unique
+  interval     String
   startTime    DateTime
   endTime      DateTime
-  status       String   @default("pending") // 'pending', 'closed', 'settled'
-  resultNumber Int?     // winning number (0-9)
+  status       String     @default("pending")
+  resultNumber Int?
   resultAt     DateTime?
+  serialNumber Int?
   bets         WingoBet[]
 
   @@index([period])
@@ -57,37 +70,36 @@ model WingoRound {
 model WingoRoundAnalytics {
   id          Int      @id @default(autoincrement())
   roundId     Int      @unique
-  totalBets   Float    // sum of all bets for the round
-  totalPayout Float    // sum of all payouts for the round
-  profit      Float    // house profit = totalBets - totalPayout
+  totalBets   Float
+  totalPayout Float
+  profit      Float
   createdAt   DateTime @default(now())
 }
 
 model WingoBet {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
+  id         Int        @id @default(autoincrement())
   userId     Int
-  round      WingoRound @relation(fields: [roundId], references: [id])
   roundId    Int
-  type       String   // 'color', 'bigsmall', 'number'
-  value      String   // e.g. 'green', 'big', '5'
+  type       String
+  value      String
   amount     Float
-  multiplier Int      // 1, 5, 10, 20, 50, 100
-  createdAt  DateTime @default(now())
-  win        Boolean? // null: not settled, true/false: result
-  payout     Float?   // amount won (if any)
+  multiplier Int
+  createdAt  DateTime   @default(now())
+  win        Boolean?
+  payout     Float?
+  round      WingoRound @relation(fields: [roundId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
 
   @@index([roundId])
   @@index([userId])
   @@index([createdAt])
 }
 
-
 model Admin {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String   // hashed
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  createdAt DateTime  @default(now())
   lastLogin DateTime?
 }
 
@@ -96,12 +108,12 @@ model ManualWithdraw {
   name          String
   mobile        String
   amount        Float
-  accountHolder String?
-  accountNumber String?
-  ifsc          String?
   status        String   @default("pending")
   userId        Int?
   createdAt     DateTime @default(now())
+  accountHolder String?
+  accountNumber String?
+  ifsc          String?
 }
 
 model PasswordReset {
@@ -117,4 +129,91 @@ model PasswordReset {
   @@index([mobile])
   @@index([otp])
   @@index([expiresAt])
+}
+
+// File Upload Model for AWS S3 Integration
+model FileUpload {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  s3Key       String   @unique
+  s3Bucket    String
+  s3Url       String
+  uploadedBy  Int?
+  user        User?    @relation(fields: [uploadedBy], references: [id])
+  category    String   // 'kyc_document', 'profile_image', 'deposit_receipt', etc.
+  status      String   @default("active") // 'active', 'deleted', 'quarantined'
+  metadata    Json?    // Additional file metadata
+  kycDocuments KycDocument[] // KYC documents using this file
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([uploadedBy])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Audit Log Model for Tracking Critical Actions
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // 'login', 'password_reset', 'deposit', 'withdrawal', etc.
+  resource    String   // 'user', 'wallet', 'bet', etc.
+  resourceId  String?  // ID of the affected resource
+  details     Json?    // Additional action details
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(true)
+  errorMessage String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@index([success])
+}
+
+// KYC Document Tracking
+model KycDocument {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id])
+  documentType String    // 'aadhar', 'pan', 'passport', 'driving_license', etc.
+  fileUploadId Int?
+  fileUpload  FileUpload? @relation(fields: [fileUploadId], references: [id])
+  status      String     @default("pending") // 'pending', 'approved', 'rejected'
+  reviewedBy  Int?
+  reviewedAt  DateTime?
+  rejectionReason String?
+  metadata    Json?      // Document-specific metadata
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([documentType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// User Activity Tracking
+model UserActivity {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  activityType String  // 'login', 'logout', 'bet_placed', 'deposit', etc.
+  details     Json?    // Activity-specific details
+  ipAddress   String?
+  userAgent   String?
+  sessionId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+  @@index([sessionId])
 }
