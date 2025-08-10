@@ -19,6 +19,13 @@ const submitManualDeposit = async (req, res) => {
     const method = req.body.method || 'Unknown';
     const file = req.file;
 
+    // Validate required fields
+    if (!name || !amount || !utr) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: name, amount, and utr are required' 
+      });
+    }
+
     // Create user if not exists
     let user = await prisma.user.findUnique({ where: { name } });
 
@@ -26,11 +33,17 @@ const submitManualDeposit = async (req, res) => {
       user = await prisma.user.create({
         data: {
           name,
-          mobile,
+          mobile: mobile || '0000000000', // Default mobile if not provided
           balance: 0,
           password: '', // required by schema
           referralCode: `${name.replace(/\s+/g, '').toLowerCase()}-${Date.now()}` // unique
         },
+      });
+    } else if (mobile && mobile !== '0000000000' && user.mobile !== mobile) {
+      // Update mobile if provided and different from current
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { mobile }
       });
     }
 

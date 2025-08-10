@@ -64,13 +64,20 @@ const Deposit = () => {
     e.preventDefault();
     if (!selected || !amount || !utr) return;
 
+    // Validate required fields
+    if (!user?.name) {
+      setError("User name is required. Please log in again.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append("name", user?.name || "");
-      formData.append("mobile", user?.mobile || "");
+      formData.append("name", user.name);
+      // Use mobile from user or fallback to a default mobile number
+      formData.append("mobile", user?.mobile || "0000000000");
       formData.append("amount", amount);
       formData.append("utr", utr);
       if (slip) {
@@ -88,16 +95,24 @@ const Deposit = () => {
         }
       );
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error("Deposit request failed");
+        // Handle specific error messages from backend
+        const errorMessage = responseData.error || 
+                            responseData.errors?.[0]?.msg || 
+                            `Deposit request failed (${response.status})`;
+        throw new Error(errorMessage);
       }
 
       // Handle success
       alert("Deposit request submitted successfully!");
+      console.log("Deposit submitted:", responseData);
       setAmount("");
       setUtr("");
       setSlip(null);
     } catch (err) {
+      console.error("Deposit error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsSubmitting(false);

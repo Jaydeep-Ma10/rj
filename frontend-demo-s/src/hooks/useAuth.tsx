@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isMockAuth, setIsMockAuth] = useState<boolean>(true); // 🧪 TEMPORARY: Track mock auth state
+  const [isMockAuth, setIsMockAuth] = useState<boolean>(false); // 🧪 TEMPORARY: Track mock auth state
 
   // 🧪 TEMPORARY: Mock user for UI testing (remove in production)
   

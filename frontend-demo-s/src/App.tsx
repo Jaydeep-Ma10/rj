@@ -47,7 +47,7 @@ const AppRoutes = () => {
   const [notif, setNotif] = useState<{ message: string; type?: "success" | "error" }>({ message: "" });
   
   // 🧪 TEMPORARY: Enable UI testing mode to bypass auth (remove in production)
-  const UI_TESTING_MODE = true; // Set to false to enable normal auth flow
+  const UI_TESTING_MODE = false; // Set to false to enable normal auth flow
   const mockUser = UI_TESTING_MODE ? { id: "test", name: "Test User" } : null;
 
   return (

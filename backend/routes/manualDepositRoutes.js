@@ -86,7 +86,7 @@ router.post(
       .escape(),
       
     body('mobile')
-      .notEmpty().withMessage('Mobile is required')
+      .optional({ checkFalsy: true })
       .isMobilePhone('any', { strictMode: false }).withMessage('Must be a valid mobile number')
       .trim(),
       
