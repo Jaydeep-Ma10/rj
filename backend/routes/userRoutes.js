@@ -41,31 +41,6 @@ router.get('/user/id/:id/balance', async (req, res) => {
   }
 });
 
-// GET /user/:name/profile - get user profile for Account page
-router.get('/user/:name/profile', async (req, res) => {
-  try {
-    const { name } = req.params;
-    const user = await prisma.user.findUnique({
-      where: { name },
-      select: {
-        id: true,
-        name: true,
-        mobile: true,
-        referralCode: true,
-
-        createdAt: true,
-      },
-    });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ user });
-  } catch (error) {
-    console.error('❌ Error fetching user profile:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 import {
   getUserDeposits,
   getUserProfile,

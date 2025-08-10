@@ -87,7 +87,7 @@ router.post(
       
     body('mobile')
       .notEmpty().withMessage('Mobile is required')
-      .isMobilePhone().withMessage('Must be a valid mobile number')
+      .isMobilePhone('any', { strictMode: false }).withMessage('Must be a valid mobile number')
       .trim(),
       
     body('amount')
