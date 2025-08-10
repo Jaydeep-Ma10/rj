@@ -103,6 +103,38 @@ async function initializeAdmins() {
   }
 }
 
+// Initialize test user for development
+async function initializeTestUser() {
+  try {
+    console.log('🧪 Checking for test user...');
+    
+    const testUser = await prisma.user.findUnique({
+      where: { name: 'TestUser' }
+    });
+    
+    if (!testUser) {
+      console.log('⚠️  Test user not found. Creating test user...');
+      const createTestUserPath = path.join(__dirname, 'scripts', 'createTestUser.js');
+      
+      execSync(`node ${createTestUserPath}`, { 
+        stdio: 'inherit',
+        env: { 
+          ...process.env, 
+          NODE_OPTIONS: '--experimental-vm-modules'
+        },
+        cwd: __dirname
+      });
+      
+      console.log('✅ Test user initialization completed');
+    } else {
+      console.log(`✅ Found test user: ${testUser.name} (Balance: ${testUser.balance})`);
+    }
+  } catch (error) {
+    console.error('❌ Error initializing test user:', error.message);
+    // Don't throw error - test user is optional for production
+  }
+}
+
 // Initialize application
 async function initializeApp() {
   try {
@@ -115,15 +147,18 @@ async function initializeApp() {
     // 3. Initialize admin users
     await initializeAdmins();
     
-    // 4. Initialize round management
+    // 4. Initialize test user for development
+    await initializeTestUser();
+    
+    // 5. Initialize round management
     const { initRoundManagement } = await import('./utils/roundManager.js');
     const cleanupRoundManagement = initRoundManagement();
     
-    // 5. Initialize keep-alive for Render free tier
+    // 6. Initialize keep-alive for Render free tier
     const { initKeepAlive } = await import('./utils/keepAlive.js');
     initKeepAlive();
     
-    // 5. Set up graceful shutdown
+    // 7. Set up graceful shutdown
     const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
     shutdownSignals.forEach(signal => {
       process.on(signal, () => {
