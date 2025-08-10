@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-
-
 import { useAuth } from "../../../hooks/useAuth";
 
 interface BetModalProps {
@@ -26,15 +24,26 @@ const BetModal: React.FC<BetModalProps> = ({
   const [multiplier] = useState<number>(1);
   const [agree, setAgree] = useState<boolean>(false);
 
-  const total = amount * quantity * multiplier;
+  const total = amount * quantity;
   const presetAmounts = [1, 10, 100, 1000];
 
   if (!isOpen) return null;
 
-  // 🔥 Dynamic color based on selection
+  const getPrimaryColor = () => {
+    const opt = selectedOption.toLowerCase();
+    if (opt.includes("digit")) {
+      const digit = parseInt(opt.replace("digit", "").trim(), 10);
+      if ([0, 5].includes(digit)) return digit === 0 ? "red" : "green";
+      if ([2, 4, 6, 8].includes(digit)) return "red";
+      if ([1, 3, 7, 9].includes(digit)) return "green";
+    }
+    if (opt.includes("red")) return "red";
+    if (opt.includes("green")) return "green";
+    return null;
+  };
+
   const getBackgroundColor = () => {
     const opt = selectedOption.toLowerCase();
-
     if (opt.includes("red")) return "#ef4444";
     if (opt.includes("green")) return "#22c55e";
     if (opt.includes("violet")) return "#8b5cf6";
@@ -49,92 +58,135 @@ const BetModal: React.FC<BetModalProps> = ({
       if (digit === 5)
         return "linear-gradient(to right, #22c55e 50%, #8b5cf6 50%)";
     }
-
-    return "#1e2d5c"; // default
+    return "#1e2d5c";
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div
-    className="text-white p-4 sm:p-6 rounded-xl w-full max-w-xs sm:max-w-md shadow-2xl overflow-y-auto max-h-[90vh]"
-    style={{
-      background: getBackgroundColor(),
-      border: "2px solid white",
-      boxShadow: "0 0 20px rgba(0,0,0,0.5)",
-    }}
-  >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-[52]">
+      <div
+        className={`text-white w-full sm:max-w-md max-h-[100vh] overflow-y-auto transform transition-transform duration-300 ${
+          isOpen ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{
+          background: "#2B3270",
+        }}
+      >
         {/* Header */}
-        <h2 className="text-xl font-bold mb-4 text-center">
-          Selected: {selectedOption}
-        </h2>
+        <div
+          className="flex justify-center items-center px-2 py-3 mb-4"
+          style={{ background: getBackgroundColor() }}
+        >
+          <h2 className="px-10 bg-white text-md rounded-md text-center text-black">
+            Selected {selectedOption}
+          </h2>
+        </div>
 
-        {/* Balance row */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-semibold">Balance</span>
-          <div className="flex gap-2">
-            {presetAmounts.map((amt) => (
+        {/* Content */}
+        <div className="px-4 pb-4">
+          {/* Balance Row */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-semibold">Balance</span>
+            <div className="flex gap-2">
+              {presetAmounts.map((amt) => (
+                <button
+                  key={amt}
+                  onClick={() => setAmount(amt)}
+                  className={`px-3 py-1 rounded-md text-sm font-bold ${
+                    amt === amount
+                      ? getPrimaryColor() === "green"
+                        ? "bg-green-500 text-white"
+                        : "bg-red-500 text-white"
+                      : "bg-[#374992] text-gray-400"
+                  }`}
+                >
+                  ₹{amt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quantity Row */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-semibold">Quantity</span>
+            <div className="flex items-center gap-2">
               <button
-                key={amt}
-                onClick={() => setAmount(amt)}
-                className={`px-3 py-1 rounded-md text-sm font-bold ${
-                  amt === amount ? "bg-yellow-400 text-black" : "bg-gray-700"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className={`bg-gray-600 px-3 py-1 rounded-lg font-bold ${
+                  getPrimaryColor() === "green"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
                 }`}
               >
-                ₹{amt}
+                -
+              </button>
+              <span className="text-lg font-bold">{quantity}</span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className={`bg-gray-600 px-3 py-1 rounded-lg font-bold ${
+                  getPrimaryColor() === "green"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }`}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Multiplier Grid */}
+          <div className="grid grid-cols-6 gap-3 mt-4 w-full">
+            {[1, 5, 10, 20, 50, 100].map((m) => (
+              <button
+                key={m}
+                onClick={() => {
+                  setQuantity(m);
+                }}
+                className={`px-2 py-2 rounded-md text-center font-bold text-sm cursor-pointer transition ${
+                  m === quantity
+                    ? getPrimaryColor() === "green"
+                      ? "bg-green-500 text-white"
+                      : "bg-red-500 text-white"
+                    : "bg-[#374992] text-gray-400"
+                }`}
+              >
+                {m}x
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Quantity row */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-semibold">Quantity</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="bg-gray-600 px-3 py-1 rounded-lg font-bold"
-            >
-              -
-            </button>
-            <span className="text-lg font-bold">{quantity}</span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="bg-gray-600 px-3 py-1 rounded-lg font-bold"
-            >
-              +
-            </button>
+          {/* Agree Checkbox */}
+          <div className="flex items-center mt-4">
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={() => setAgree(!agree)}
+              className="mr-2"
+            />
+            <label className="text-sm">I agree to the pre-sale rules</label>
           </div>
+
+          {/* Action Buttons - side by side */}
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500 text-white p-2 rounded mt-2 text-center font-bold">
+              {error}
+            </div>
+          )}
         </div>
-
-        {/* Multiplier selection */}
-        {/* <MultiplierGrid onSelect={(m) => setMultiplier(m)} /> */}
-        <div className="grid grid-cols-6 gap-3 mt-4 w-full">
-  {[1, 5, 10, 20, 50, 100].map((m) => (
-    <div
-      key={m}
-      className="px-2 py-2 rounded-full text-center text-white font-bold text-sm cursor-pointer bg-[#1e2d5c] hover:bg-yellow-400 hover:text-black transition"
-    >
-      {m}x
-    </div>
-  ))}
-</div>
-
-
-        {/* I agree checkbox */}
-        <div className="flex items-center mt-4">
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={() => setAgree(!agree)}
-            className="mr-2"
-          />
-          <label className="text-sm">I agree to the pre-sale rules</label>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex flex-col gap-3 mt-6">
+        <div className="flex mt-6 w-full">
           <button
-            className="w-full py-3 bg-yellow-400 text-black font-bold text-md rounded-full"
+            onClick={onClose}
+            className="w-2/5 py-1 bg-[#374992] text-gray-400 font-semibold rounded-none"
+          >
+            Cancel
+          </button>
+          <button
+            className={`w-3/5 py-1 text-black font-bold text-md rounded-none ${
+                  getPrimaryColor() === "green"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }`}
             disabled={!agree || loading || !roundId}
             onClick={async () => {
               if (!agree || !user?.id || !roundId) return;
@@ -149,11 +201,14 @@ const BetModal: React.FC<BetModalProps> = ({
                   amount: amount * quantity,
                   multiplier,
                 };
-                const res = await fetch("https://rj-755j.onrender.com/api/wingo/bet", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload),
-                });
+                const res = await fetch(
+                  "https://rj-755j.onrender.com/api/wingo/bet",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                  }
+                );
                 if (!res.ok) {
                   const err = await res.json();
                   throw new Error(err.error || "Failed to place bet");
@@ -167,21 +222,9 @@ const BetModal: React.FC<BetModalProps> = ({
               }
             }}
           >
-            {loading ? "Placing Bet..." : `Bet Placing Amount: ₹${total}`}
-          </button>
-
-          <button
-            onClick={onClose}
-            className="bg-gray-800 text-white py-2 rounded-md font-semibold"
-          >
-            Cancel
+            {loading ? "Placing Bet..." : `Total Amount: ₹${total}`}
           </button>
         </div>
-        {error && (
-          <div className="bg-red-500 text-white p-2 rounded mt-2 text-center font-bold">
-            {error}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -196,6 +239,7 @@ function getBetType(option: string) {
   if (opt === "random") return "random";
   return "unknown";
 }
+
 function getBetValue(option: string) {
   const opt = option.toLowerCase();
   if (["red", "green", "violet"].some((c) => opt.includes(c))) return opt;

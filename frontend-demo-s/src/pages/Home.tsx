@@ -1,60 +1,45 @@
-// src/pages/Home.tsx
-import { Link } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import { IoNotificationsSharp } from "react-icons/io5";
+import AdBanner from "@/games/wingo/components/AdBanner";
+import LotteryGames from "@/components/LotteryGames";
+import OriginalGames from "@/components/OriginalGames";
 
 const Home = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <div className="bg-white rounded-lg shadow p-6">
-        {/* Advertisement Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-yellow-100 rounded-lg p-4 shadow text-center animate-pulse">
-            <h2 className="text-lg font-bold text-yellow-800 mb-1">🔥 Hot Offer!</h2>
-            <p className="text-yellow-900 text-sm">Deposit now and get 10% bonus coins!</p>
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-end px-2 py-3 bg-[#2B3270]">
+        <IoNotificationsSharp className="cursor-pointer text-2xl text-[#408ae6]" />
+      </div>
+      <AdBanner />
+      <div className="p-6 mb-40">
+        {/* Lottery Section */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex font-bold text-white">
+              <div className=" bg-[#61A9FF] mr-2 p-1 rounded-md" />
+              <h2>Lottery</h2>
+            </div>
+            <div className="text-xs border-[0.2px] border-gray-300 text-gray-300 rounded-md py-[0.5px] px-4">
+              <button onClick={() => navigate("/games/all/lottery")}>All &gt;</button>
+            </div>
           </div>
-          <div className="bg-blue-100 rounded-lg p-4 shadow text-center animate-pulse">
-            <h2 className="text-lg font-bold text-blue-800 mb-1">🎁 Invite Friends</h2>
-            <p className="text-blue-900 text-sm">Earn rewards for every referral who plays!</p>
-          </div>
+          <LotteryGames />
         </div>
-        {/* Games Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Win Go Card */}
-          {/* Win Go Card - Updated with correct route */}
-<div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] hover:shadow-lg transition-shadow duration-300">
-  <img 
-    src="https://cdn-icons-png.flaticon.com/512/1040/1040231.png" 
-    alt="Win Go" 
-    className="w-12 h-12 mb-1"
-  />
-  <h2 className="text-base font-bold mb-1 text-purple-700">Win Go</h2>
-  {/* <p className="mb-1 text-gray-600 text-xs text-center">Predict the winning number and multiply your bet!</p> */}
-  <Link to="games/wingo" className="mt-auto w-full">
-    <button className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:opacity-90 transition-all">
-      Play Now
-    </button>
-  </Link>
-</div>
-          {/* Game 2 - Coming Soon */}
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] opacity-70">
-            <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" alt="Game 2" className="w-12 h-12 mb-1 grayscale" />
-            <h2 className="text-base font-bold mb-1 text-gray-500">Game 2</h2>
-            <p className="mb-1 text-gray-400 text-xs text-center">Coming Soon</p>
-            <button className="bg-gray-300 text-gray-600 px-3 py-1 rounded text-xs font-semibold cursor-not-allowed mt-auto" disabled>Coming Soon</button>
+
+        {/* Original Section */}
+        <div>
+          <div className="flex justify-between items-center mb-4 mt-6">
+            <div className="flex font-bold text-white">
+              <div className=" bg-[#61A9FF] mr-2 p-1 rounded-md" />
+              <h2>Original</h2>
+            </div>
+            <div className="text-xs border-[0.2px] border-gray-300 text-gray-300 rounded-md py-[0.5px] px-4">
+              <button onClick={() => navigate("/games/all/minigames")}>All &gt;</button>
+            </div>
           </div>
-          {/* Game 3 - Coming Soon */}
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] opacity-70">
-            <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" alt="Game 3" className="w-12 h-12 mb-1 grayscale" />
-            <h2 className="text-base font-bold mb-1 text-gray-500">Game 3</h2>
-            <p className="mb-1 text-gray-400 text-xs text-center">Coming Soon</p>
-            <button className="bg-gray-300 text-gray-600 px-3 py-1 rounded text-xs font-semibold cursor-not-allowed mt-auto" disabled>Coming Soon</button>
-          </div>
-          {/* Game 4 - Coming Soon */}
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center min-h-[180px] opacity-70">
-            <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" alt="Game 4" className="w-12 h-12 mb-1 grayscale" />
-            <h2 className="text-base font-bold mb-1 text-gray-500">Game 4</h2>
-            <p className="mb-1 text-gray-400 text-xs text-center">Coming Soon</p>
-            <button className="bg-gray-300 text-gray-600 px-3 py-1 rounded text-xs font-semibold cursor-not-allowed mt-auto" disabled>Coming Soon</button>
-          </div>
+          <OriginalGames />
         </div>
       </div>
     </div>

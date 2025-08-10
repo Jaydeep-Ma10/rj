@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Button from "../components/ui/Button";
-import { FaWallet } from "react-icons/fa";
 import { MdRefresh } from "react-icons/md";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getSocket } from '../../../utils/socket';
+import { IoWalletSharp } from "react-icons/io5";
 
 const WalletCard: React.FC = () => {
   const { user } = useAuth();
@@ -52,10 +52,10 @@ const WalletCard: React.FC = () => {
   }, [user?.name, user?.id]);
 
   return (
-    <div className="bg-[#1e2d5c] p-5 rounded-xl text-white shadow-md flex flex-col items-center">
+    <div className="bg-[#374992] p-3 rounded-xl text-white shadow-md flex flex-col items-center mt-4">
       {/* Balance + Refresh in center */}
-      <div className="flex flex-col items-center mb-2">
-        <p className="text-2xl font-bold">
+      <div className="flex gap-4 items-center mb-2">
+        <p className="text-lg font-bold">
           {loading ? (
             <span className="text-base text-gray-400">Loading...</span>
           ) : error ? (
@@ -69,16 +69,16 @@ const WalletCard: React.FC = () => {
 
       {/* Icon + Label */}
       <div className="flex items-center gap-2 mb-4">
-        <FaWallet size={18} className="text-white" />
+        <IoWalletSharp size={18} className="text-[#779de7]" />
         <span className="text-sm text-gray-300">Wallet Balance</span>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-4">
-        <Button className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-semibold" onClick={() => navigate('/withdraw')}>
+      <div className="flex gap-12">
+        <Button className="bg-red-500 hover:bg-red-600 text-white px-6 py-[3.5px] rounded-full font-semibold" onClick={() => navigate('/withdraw')}>
           Withdraw
         </Button>
-        <Button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-full font-semibold" onClick={() => navigate('/deposit')}>
+        <Button className="bg-[#17B15E] hover:bg-green-600 text-white px-8 py-[3.5px] rounded-full font-semibold" onClick={() => navigate('/deposit')}>
           Deposit
         </Button>
       </div>

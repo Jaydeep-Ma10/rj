@@ -1,7 +1,7 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useState } from "react";
-import "./App.css";
+// import "./App.css";
 
 // Test error - this should cause a TypeScript error
 // const testError: string = 123; // Type 'number' is not assignable to type 'string'
@@ -31,6 +31,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 // Components
 import BottomNav from "./components/BottomNav";
 import Notification from "./components/Notification";
+import Announcement from "./components/Announcement";
+import AllGames from "./components/AllGames";  
 
 // Auth
 import { AuthProvider, useAuth } from "./hooks/useAuth";
@@ -73,9 +75,11 @@ const AppRoutes = () => {
               <Route path="/callback" element={<Callback />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/referral" element={<Referral />} />
+              <Route path="/announcement" element={<Announcement />} />
 
               {/* Games with nested route */}
               <Route path="/games" element={<Games />}>
+                <Route path="all/:category" element={<AllGames />} />
                 <Route
                   path="wingo"
                   element={

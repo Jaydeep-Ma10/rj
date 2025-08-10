@@ -13,11 +13,9 @@ import GameHistoryTable from "./components/GameHistoryTable";
 import GameChart from "./components/GameChart";
 import MyHistoryTable from "./components/MyHistoryTable";
 
-
-
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect } from "react";
-import { getSocket } from '../../utils/socket';
+import { getSocket } from "../../utils/socket";
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -33,7 +31,9 @@ const WingoGame = () => {
     number: number;
     status?: string;
   }
-  const [gameHistoryData, setGameHistoryData] = useState<HistoryItem[]>([] as HistoryItem[]);
+  const [gameHistoryData, setGameHistoryData] = useState<HistoryItem[]>(
+    [] as HistoryItem[]
+  );
   const [chartData, setChartData] = useState<any[]>([]); // For now, use same as history
   interface MyHistoryItem {
     id: string;
@@ -43,8 +43,9 @@ const WingoGame = () => {
     result?: "Win" | "Lose";
     status?: string;
   }
-  const [myHistoryData, setMyHistoryData] = useState<MyHistoryItem[]>([] as MyHistoryItem[]); 
-
+  const [myHistoryData, setMyHistoryData] = useState<MyHistoryItem[]>(
+    [] as MyHistoryItem[]
+  );
 
   // Backend-driven round/timer state
   interface Round {
@@ -73,17 +74,27 @@ const WingoGame = () => {
         if (!res.ok) throw new Error("Failed to fetch game history");
         const data = await res.json();
         // Map backend data to include status for badge
-        const mapped = (Array.isArray(data) ? data : data.history || []).map((item: any, i: number) => ({
-          id: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period || String(i)),
-          period: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period || String(i)),
-          number: item.resultNumber,
-          status: item.resultNumber == null ? "pending" : "settled",
-          ...item,
-        }));
+        const mapped = (Array.isArray(data) ? data : data.history || []).map(
+          (item: any, i: number) => ({
+            id:
+              item.interval && item.serialNumber
+                ? `${item.interval}-${item.serialNumber}`
+                : item.period || String(i),
+            period:
+              item.interval && item.serialNumber
+                ? `${item.interval}-${item.serialNumber}`
+                : item.period || String(i),
+            number: item.resultNumber,
+            status: item.resultNumber == null ? "pending" : "settled",
+            ...item,
+          })
+        );
         setGameHistoryData(mapped);
         setChartData(mapped);
       })
-      .catch((err) => setErrorHistory(err.message || "Error fetching game history"))
+      .catch((err) =>
+        setErrorHistory(err.message || "Error fetching game history")
+      )
       .finally(() => setLoadingHistory(false));
   }, []);
 
@@ -98,7 +109,11 @@ const WingoGame = () => {
     setRoundLoading(true);
     setRoundError(null);
     setCurrentRound(null);
-    fetch(`https://rj-755j.onrender.com/api/wingo/round/current?interval=${encodeURIComponent(intervalLabel)}`)
+    fetch(
+      `https://rj-755j.onrender.com/api/wingo/round/current?interval=${encodeURIComponent(
+        intervalLabel
+      )}`
+    )
       .then(async (res) => {
         if (!res.ok) throw new Error("No current round");
         const round = await res.json();
@@ -127,18 +142,36 @@ const WingoGame = () => {
           const mapped: MyHistoryItem[] = Array.isArray(data)
             ? data.map((item: any, i: number) => ({
                 ...item,
-                id: item.betId !== undefined ? String(item.betId) : ((item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period !== undefined ? String(item.period) : String(i))),
-                period: (item.interval && item.serialNumber) ? `${item.interval}-${item.serialNumber}` : (item.period ? String(item.period) : String(i)),
-                betType: item.betType || '',
-                amount: typeof item.amount === 'number' ? item.amount : 0,
+                id:
+                  item.betId !== undefined
+                    ? String(item.betId)
+                    : item.interval && item.serialNumber
+                    ? `${item.interval}-${item.serialNumber}`
+                    : item.period !== undefined
+                    ? String(item.period)
+                    : String(i),
+                period:
+                  item.interval && item.serialNumber
+                    ? `${item.interval}-${item.serialNumber}`
+                    : item.period
+                    ? String(item.period)
+                    : String(i),
+                betType: item.betType || "",
+                amount: typeof item.amount === "number" ? item.amount : 0,
                 status: item.status === "-" ? "pending" : "settled",
-                result: item.status === "Win" ? "Win" : item.status === "Lose" ? "Lose" : undefined,
-              })
-            )
-            : [] as MyHistoryItem[];
+                result:
+                  item.status === "Win"
+                    ? "Win"
+                    : item.status === "Lose"
+                    ? "Lose"
+                    : undefined,
+              }))
+            : ([] as MyHistoryItem[]);
           setMyHistoryData(mapped);
         })
-        .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
+        .catch((err) =>
+          setErrorMyHistory(err.message || "Error fetching my bet history")
+        )
         .finally(() => setLoadingMyHistory(false));
     };
     fetchMyBets();
@@ -151,13 +184,13 @@ const WingoGame = () => {
     const handleBetUpdate = () => {
       fetchMyBets();
     };
-    socket.on('bet:update', handleBetUpdate);
-    socket.on('round:settled', handleBetUpdate);
+    socket.on("bet:update", handleBetUpdate);
+    socket.on("round:settled", handleBetUpdate);
 
     return () => {
       if (intervalId) clearInterval(intervalId);
-      socket.off('bet:update', handleBetUpdate);
-      socket.off('round:settled', handleBetUpdate);
+      socket.off("bet:update", handleBetUpdate);
+      socket.off("round:settled", handleBetUpdate);
     };
   }, [user?.id]);
 
@@ -166,17 +199,17 @@ const WingoGame = () => {
     setIsModalOpen(true);
   };
 
-
-
   return (
-    <div className="min-h-screen bg-[#121d45] p-2 sm:p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4 lg:space-y-6 w-full">
-      <HeaderBar />
-      <WalletCard />
-      <AdBanner />
-      <TimeSelector
-        selected={selectedInterval}
-        onSelect={(label) => setSelectedInterval(label)}
-      />
+    <div className="min-h-screen sm:p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4 lg:space-y-6 w-[100vw]">
+      <div className="px-[13px] bg-[#2B3270] rounded-b-[6rem] mb-5">
+        <HeaderBar />
+        <WalletCard />
+        <AdBanner />
+        <TimeSelector
+          selected={selectedInterval || "30sec"}
+          onSelect={(label) => setSelectedInterval(label)}
+        />
+      </div>
 
       <GameHeaderCard
         selectedInterval={selectedInterval}
@@ -186,26 +219,25 @@ const WingoGame = () => {
         roundLoading={roundLoading}
         roundError={roundError}
       />
-
-      <div className="bg-[#1e2d5c] p-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full max-w-2xl mx-auto">
+        <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
         <BetOptions onSelect={(color) => handleOpenBet(color)} />
+        <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
+        <MultiplierGrid
+          onSelect={(value) => {
+            if (value === "Random") {
+              handleOpenBet("Random"); // Open modal with Random
+            } else {
+              console.log("Multiplier selected:", value); // or use it for other logic
+            }
+          }}
+          />
+        <BigSmallButtons
+          onSelect={(value) => handleOpenBet(value.toUpperCase())}
+          />
+          </div>
+      {/* <div className="flex justify-center items-center flex-col bg-[#2B3270] px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full">
 
-      <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
-
-     <MultiplierGrid
-  onSelect={(value) => {
-    if (value === "Random") {
-      handleOpenBet("Random"); // Open modal with Random
-    } else {
-      console.log("Multiplier selected:", value); // or use it for other logic
-    }
-  }}
-/>
-
-
-      <BigSmallButtons
-        onSelect={(value) => handleOpenBet(value.toUpperCase())}
-      /></div>
+      </div> */}
 
       <BetModal
         isOpen={isModalOpen}
@@ -219,71 +251,83 @@ const WingoGame = () => {
           // 2. Refresh my bet history
           if (user?.id) {
             setLoadingMyHistory(true);
-            fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
+            fetch(
+              `https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`
+            )
               .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to fetch my bet history");
                 const data = await res.json();
                 const mapped: MyHistoryItem[] = Array.isArray(data.bets)
                   ? data.bets.map((item: any, i: number) => ({
                       ...item,
-                      id: item.betId !== undefined ? String(item.betId) : item.period !== undefined ? String(item.period) : String(i),
+                      id:
+                        item.betId !== undefined
+                          ? String(item.betId)
+                          : item.period !== undefined
+                          ? String(item.period)
+                          : String(i),
                       period: item.period ? String(item.period) : String(i),
-                      betType: item.betType || '',
-                      amount: typeof item.amount === 'number' ? item.amount : 0,
+                      betType: item.betType || "",
+                      amount: typeof item.amount === "number" ? item.amount : 0,
                       status: item.status === "-" ? "pending" : "settled",
-                      result: item.status === "Win" ? "Win" : item.status === "Lose" ? "Lose" : undefined,
-                    })
-                  )
-                  : [] as MyHistoryItem[];
+                      result:
+                        item.status === "Win"
+                          ? "Win"
+                          : item.status === "Lose"
+                          ? "Lose"
+                          : undefined,
+                    }))
+                  : ([] as MyHistoryItem[]);
                 setMyHistoryData(mapped);
               })
-              .catch((err) => setErrorMyHistory(err.message || "Error fetching my bet history"))
+              .catch((err) =>
+                setErrorMyHistory(
+                  err.message || "Error fetching my bet history"
+                )
+              )
               .finally(() => setLoadingMyHistory(false));
           }
         }}
       />
 
       {/* Tab Switcher Buttons */}
-      <div className="bg-[#1e2d5c] rounded-xl p-2 mt-6">
-        <div className="flex justify-around space-x-1">
+      <div className=" rounded-xl mt-6 m-4">
+        <div className="flex justify-between items-center gap-2">
           <button
             onClick={() => setActiveTab("game")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "game"
-                ? "bg-yellow-400 text-black shadow-lg scale-105"
-                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+                ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
+                : "bg-[#374992] text-gray-400 hover:bg-gray-600/70 hover:scale-102"
             }`}
           >
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">🎮</span>
               <span className="text-xs sm:text-sm">Game History</span>
             </div>
           </button>
 
           <button
             onClick={() => setActiveTab("chart")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "chart"
-                ? "bg-yellow-400 text-black shadow-lg scale-105"
-                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+                ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
+                : "bg-[#374992] text-white hover:bg-gray-600/70 hover:scale-102"
             }`}
           >
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">📊</span>
               <span className="text-xs sm:text-sm">Chart</span>
             </div>
           </button>
 
           <button
             onClick={() => setActiveTab("my")}
-            className={`flex-1 text-sm px-3 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
+            className={`flex-1 text-sm px-2 py-3 rounded-lg font-semibold transition-all duration-300 transform ${
               activeTab === "my"
-                ? "bg-yellow-400 text-black shadow-lg scale-105"
-                : "bg-gray-700/50 text-white hover:bg-gray-600/70 hover:scale-102"
+                ? "bg-[linear-gradient(180deg,_#2AAAF3_0%,_#2979F2_100%)] text-white shadow-lg scale-105"
+                : "bg-[#374992] text-white hover:bg-gray-600/70 hover:scale-102"
             }`}
           >
             <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">📋</span>
               <span className="text-xs sm:text-sm">My History</span>
             </div>
           </button>
@@ -306,8 +350,8 @@ const WingoGame = () => {
               <div className="flex flex-col items-center space-y-2">
                 <span className="text-2xl">⚠️</span>
                 <p className="text-sm">{errorHistory}</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={() => window.location.reload()}
                   className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
                 >
                   Retry
@@ -315,16 +359,19 @@ const WingoGame = () => {
               </div>
             </div>
           )}
-          {!loadingHistory && !errorHistory && <GameHistoryTable history={gameHistoryData} />}
+          {!loadingHistory && !errorHistory && (
+            <GameHistoryTable history={gameHistoryData} />
+          )}
         </>
       )}
 
-      {activeTab === "chart" &&  <GameChart data={chartData} />
-      //  (
-      //   <div className="bg-[#1e2d5c] text-white p-4 mt-4 rounded-lg">
-      //     <h2 className="text-center text-lg font-bold">📈 Chart View Coming Soon</h2>
-      //   </div>
-      // )
+      {
+        activeTab === "chart" && <GameChart data={chartData} />
+        //  (
+        //   <div className="bg-[#1e2d5c] text-white p-4 mt-4 rounded-lg">
+        //     <h2 className="text-center text-lg font-bold">📈 Chart View Coming Soon</h2>
+        //   </div>
+        // )
       }
 
       {activeTab === "my" && (
@@ -333,7 +380,9 @@ const WingoGame = () => {
             <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
               <div className="flex flex-col items-center space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-                <p className="text-gray-300 text-sm">Loading your bet history...</p>
+                <p className="text-gray-300 text-sm">
+                  Loading your bet history...
+                </p>
               </div>
             </div>
           )}
@@ -342,8 +391,8 @@ const WingoGame = () => {
               <div className="flex flex-col items-center space-y-2">
                 <span className="text-2xl">⚠️</span>
                 <p className="text-sm">{errorMyHistory}</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={() => window.location.reload()}
                   className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
                 >
                   Retry
@@ -351,7 +400,9 @@ const WingoGame = () => {
               </div>
             </div>
           )}
-          {!loadingMyHistory && !errorMyHistory && <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />}
+          {!loadingMyHistory && !errorMyHistory && (
+            <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
+          )}
         </>
       )}
     </div>

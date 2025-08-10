@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Withdraw = () => {
   const { user } = useAuth();
@@ -9,6 +11,7 @@ const Withdraw = () => {
     accountNumber: "",
     ifsc: "",
   });
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -56,8 +59,19 @@ const Withdraw = () => {
   };
 
   return (
-    <div className="max-w-md w-full bg-white shadow rounded p-6 mx-auto mt-8">
-      <h2 className="text-2xl font-bold mb-4 text-center text-purple-700">Withdraw Funds</h2>
+    <>
+    <div className="relative flex items-center justify-center w-full text-white px-2 py-3 bg-[#2B3270]">
+        {/* Left Icon */}
+        <ArrowLeft
+          onClick={() => navigate(-1)}
+          className="absolute left-2 cursor-pointer"
+        />
+
+        {/* Center Title */}
+        <h2 className="text-lg font-bold ">Withdraw Funds</h2>
+      </div>
+    <div className="mx-4 bg-[#2B3270] shadow rounded p-6 mt-8 text-white">
+      <h2 className="text-2xl font-bold mb-4 text-center text-white">Withdraw Funds</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           name="amount"
@@ -65,41 +79,41 @@ const Withdraw = () => {
           placeholder="Amount"
           value={formData.amount}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="w-full p-2 rounded bg-[#374992] placeholder:text-white"
           required
-        />
+          />
         <input
           name="accountHolder"
           type="text"
           placeholder="Account Holder Name"
           value={formData.accountHolder}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="w-full p-2 rounded bg-[#374992] placeholder:text-white"
           required
-        />
+          />
         <input
           name="accountNumber"
           type="text"
           placeholder="Account Number"
           value={formData.accountNumber}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="w-full p-2 rounded bg-[#374992] placeholder:text-white"
           required
-        />
+          />
         <input
           name="ifsc"
           type="text"
           placeholder="IFSC Code"
           value={formData.ifsc}
           onChange={handleChange}
-          className="w-full border p-2 rounded"
+          className="w-full p-2 rounded bg-[#374992] placeholder:text-white"
           required
-        />
+          />
         <button
           type="submit"
-          className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={submitting}
-        >
+          >
           {submitting ? "Submitting..." : "Request Withdrawal"}
         </button>
         {submitStatus === "success" && (
@@ -110,6 +124,7 @@ const Withdraw = () => {
         )}
       </form>
     </div>
+        </>
   );
 };
 

@@ -8,7 +8,7 @@ export default function HeaderBar() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-[#1E2A78] text-white">
+    <div className="flex items-center justify-between px-2 py-2 text-white">
       <ArrowLeft onClick={() => navigate(-1)} className="cursor-pointer" />
       {/* <img src={logo} alt="logo" className="h-6" /> */}
       <Headphones className="cursor-pointer" />
