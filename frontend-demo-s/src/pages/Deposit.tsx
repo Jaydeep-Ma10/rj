@@ -64,6 +64,10 @@ const Deposit = () => {
     e.preventDefault();
     if (!selected || !amount || !utr) return;
 
+    // Debug: Log current user data
+    console.log("🔍 Current user data:", user);
+    console.log("🔍 Form data:", { amount, utr, selectedMethod: selected?.name, hasSlip: !!slip });
+
     // Validate required fields
     if (!user?.name) {
       setError("User name is required. Please log in again.");
@@ -87,6 +91,12 @@ const Deposit = () => {
         formData.append("method", selected.name);
       }
 
+      // Debug: Log FormData contents
+      console.log("🔍 FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+
       const response = await fetch(
         "https://rj-755j.onrender.com/api/manual-deposit",
         {
@@ -95,24 +105,36 @@ const Deposit = () => {
         }
       );
 
+      console.log("🔍 Response status:", response.status);
+      console.log("🔍 Response headers:", [...response.headers.entries()]);
+
       const responseData = await response.json();
+      console.log("🔍 Response data:", responseData);
 
       if (!response.ok) {
         // Handle specific error messages from backend
         const errorMessage = responseData.error || 
                             responseData.errors?.[0]?.msg || 
                             `Deposit request failed (${response.status})`;
+        console.error("❌ Backend error:", errorMessage);
+        console.error("❌ Full response:", responseData);
         throw new Error(errorMessage);
       }
 
       // Handle success
       alert("Deposit request submitted successfully!");
-      console.log("Deposit submitted:", responseData);
+      console.log("✅ Deposit submitted successfully:", responseData);
       setAmount("");
       setUtr("");
       setSlip(null);
     } catch (err) {
-      console.error("Deposit error:", err);
+      console.error("❌ Deposit error:", err);
+      console.error("❌ Error details:", {
+        message: err instanceof Error ? err.message : "Unknown error",
+        stack: err instanceof Error ? err.stack : undefined,
+        user: user,
+        formData: { amount, utr, selectedMethod: selected?.name, hasSlip: !!slip }
+      });
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsSubmitting(false);

@@ -155,10 +155,10 @@ const submitManualDeposit = async (req, res) => {
     const deposit = await prisma.manualDeposit.create({
       data: {
         name,
-        mobile,
+        mobile: mobile || user.mobile || '0000000000', // Ensure mobile is always provided
         amount: parseFloat(amount),
         utr,
-        method,
+        method: method || 'Unknown',
         slipUrl, // This will be S3 URL or local path
         userId: user.id,
         status: 'pending',
@@ -198,6 +198,17 @@ const submitManualDeposit = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Manual deposit error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name,
+      requestBody: req.body,
+      hasFile: !!req.file,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size
+    });
+    
     logError(error, { 
       context: 'manual_deposit_submission',
       body: req.body,
