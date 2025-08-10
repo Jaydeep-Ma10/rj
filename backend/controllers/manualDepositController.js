@@ -117,17 +117,18 @@ const submitManualDeposit = async (req, res) => {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              s3Key: '', // Empty for local files
-              s3Bucket: '',
-              s3Url: slipUrl,
+              s3Key: `local_${Date.now()}_${file.filename}`, // Unique key for local files
+              s3Bucket: 'local-storage', // Placeholder for local files
+              s3Url: slipUrl, // Use the local file URL
               uploadedBy: user.id,
               category: 'deposit_receipt',
               status: 'active',
               metadata: {
-                localPath: file.path,
                 depositType: 'manual',
                 utr: utr,
-                amount: parseFloat(amount)
+                amount: parseFloat(amount),
+                localPath: file.path,
+                isLocalFile: true
               }
             }
           });
@@ -155,10 +156,10 @@ const submitManualDeposit = async (req, res) => {
     const deposit = await prisma.manualDeposit.create({
       data: {
         name,
-        mobile,
+        mobile: mobile || user.mobile || '0000000000', // Ensure mobile is always provided
         amount: parseFloat(amount),
         utr,
-        method,
+        method: method || 'Unknown',
         slipUrl, // This will be S3 URL or local path
         userId: user.id,
         status: 'pending',
@@ -198,6 +199,17 @@ const submitManualDeposit = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Manual deposit error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name,
+      requestBody: req.body,
+      hasFile: !!req.file,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size
+    });
+    
     logError(error, { 
       context: 'manual_deposit_submission',
       body: req.body,
