@@ -103,7 +103,7 @@ const WingoGame = () => {
     let intervalLabel = selectedInterval
       .replace("WinGo ", "")
       .replace("sec", "s")
-      .replace("Min", "m")
+      .replace("min", "m")  // Fixed: lowercase "min" not "Min"
       .replace(/\s/g, "") // Remove all spaces
       .trim();
     setRoundLoading(true);
