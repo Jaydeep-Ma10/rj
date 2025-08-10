@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { depositeButton, withdrawButton } from "@/assets/images";
 import { MdRefresh } from "react-icons/md";
 import { FaPowerOff } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 
 const Account = () => {
   const { user, logout } = useAuth();
@@ -10,6 +11,7 @@ const Account = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user?.name) return;
@@ -212,7 +214,11 @@ const Account = () => {
 
       <div className="flex justify-center items-center ">
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            navigate("/");
+          }
+          }
           className="w-full border border-[#61A9FF]  text-[#61A9FF] py-2 mx-4 rounded-3xl font-bold hover:bg-red-700 transition"
         >
           <FaPowerOff className="inline mr-1 text-xl" />

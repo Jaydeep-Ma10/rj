@@ -3,14 +3,28 @@ import { IoNotificationsSharp } from "react-icons/io5";
 import AdBanner from "@/games/wingo/components/AdBanner";
 import LotteryGames from "@/components/LotteryGames";
 import OriginalGames from "@/components/OriginalGames";
+import { useAuth } from "@/hooks/useAuth";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // const user = false;
 
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-end px-2 py-3 bg-[#2B3270]">
-        <IoNotificationsSharp className="cursor-pointer text-2xl text-[#408ae6]" />
+        {user ? (
+          <IoNotificationsSharp className="cursor-pointer text-2xl text-[#408ae6]" />
+        ) : (
+          <div>
+            <button onClick={() => navigate("/login")} className="py-1 px-5 border-[#61A9FF] text-[#61A9FF] border-[0.5px] rounded-md text-xs mr-2">
+              Log in
+            </button>
+            <button onClick={() => navigate("/signup")} className="py-[5px] px-4 bg-gradient-to-r from-[#2AAAF3] to-[#2979F2] text-white rounded-md text-xs">
+              Register
+            </button>
+          </div>
+        )}
       </div>
       <AdBanner />
       <div className="p-6 mb-40">
@@ -22,7 +36,9 @@ const Home = () => {
               <h2>Lottery</h2>
             </div>
             <div className="text-xs border-[0.2px] border-gray-300 text-gray-300 rounded-md py-[0.5px] px-4">
-              <button onClick={() => navigate("/games/all/lottery")}>All &gt;</button>
+              <button onClick={() => navigate("/games/all/lottery")}>
+                All &gt;
+              </button>
             </div>
           </div>
           <LotteryGames />
@@ -36,7 +52,9 @@ const Home = () => {
               <h2>Original</h2>
             </div>
             <div className="text-xs border-[0.2px] border-gray-300 text-gray-300 rounded-md py-[0.5px] px-4">
-              <button onClick={() => navigate("/games/all/minigames")}>All &gt;</button>
+              <button onClick={() => navigate("/games/all/minigames")}>
+                All &gt;
+              </button>
             </div>
           </div>
           <OriginalGames />
