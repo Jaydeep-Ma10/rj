@@ -117,17 +117,18 @@ const submitManualDeposit = async (req, res) => {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              s3Key: '', // Empty for local files
-              s3Bucket: '',
-              s3Url: slipUrl,
+              s3Key: `local_${Date.now()}_${file.filename}`, // Unique key for local files
+              s3Bucket: 'local-storage', // Placeholder for local files
+              s3Url: slipUrl, // Use the local file URL
               uploadedBy: user.id,
               category: 'deposit_receipt',
               status: 'active',
               metadata: {
-                localPath: file.path,
                 depositType: 'manual',
                 utr: utr,
-                amount: parseFloat(amount)
+                amount: parseFloat(amount),
+                localPath: file.path,
+                isLocalFile: true
               }
             }
           });
