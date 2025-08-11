@@ -62,13 +62,12 @@ function ensureUploadsDir() {
 // Apply database migrations
 async function applyMigrations() {
   try {
-    console.log('🔍 Skipping migrations - using db push for development');
-    // Temporarily disabled for development - using db push instead
-    // execSync('npx prisma migrate deploy', { 
-    //   stdio: 'inherit',
-    //   env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-    // });
-    console.log('✅ Database schema is already in sync');
+    console.log('🔍 Applying database migrations...');
+    execSync('npx prisma migrate deploy', { 
+      stdio: 'inherit',
+      env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
+    });
+    console.log('✅ Database migrations applied successfully');
   } catch (error) {
     console.error('❌ Failed to apply migrations:', error);
     throw error;
