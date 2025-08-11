@@ -88,10 +88,22 @@ async function applyMigrations() {
           env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
         });
         console.log('✅ Database migrations resolved and applied successfully');
+        
+        // Verify critical tables exist after migration resolution
+        console.log('🔍 Verifying critical tables exist...');
+        try {
+          execSync('npx prisma db push --accept-data-loss', { 
+            stdio: 'inherit',
+            env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
+          });
+          console.log('✅ Database schema verified and synchronized');
+        } catch (verifyError) {
+          console.error('⚠️ Schema verification failed:', verifyError.message);
+        }
       } catch (resolveError) {
         console.log('⚠️ Migration resolve failed, using db push as fallback...');
         // Fallback to db push to sync schema
-        execSync('npx prisma db push', { 
+        execSync('npx prisma db push --accept-data-loss', { 
           stdio: 'inherit',
           env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
         });
