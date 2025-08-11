@@ -22,7 +22,8 @@ import Games from "./pages/Games";
 import Activity from "./pages/Activity";
 import Wallet from "./pages/Wallet";
 import Account from "./pages/Account";
-import Landing from "./pages/Landing";
+// import Landing from "./pages/Landing";
+import ResetPassword from "./pages/ResetPassword";
 
 // Admin pagess
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -110,9 +111,11 @@ const AppRoutes = () => {
                   <Route path="/callback" element={<Callback />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/referral" element={<Referral />} />
+                  <Route path="/announcement" element={<Announcement />} />
 
                   {/* Games with nested route */}
                   <Route path="/games" element={<Games />}>
+                  <Route path="all/:category" element={<AllGames />} />
                     <Route
                       path="wingo"
                       element={
@@ -126,9 +129,11 @@ const AppRoutes = () => {
               ) : (
                 <>
                   {/* Non-authenticated user routes */}
-                  <Route path="/*" element={<Landing />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/*" element={<Signup />} />
                   <Route path="/login" element={<Login setNotif={setNotif} />} />
                   <Route path="/signup" element={<Signup setNotif={setNotif} />} />
+                  <Route path="/reset-password" element={<ResetPassword /> } />
                 </>
               )}
             </>
