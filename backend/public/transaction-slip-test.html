@@ -196,7 +196,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        const API_BASE = 'https://rj-755j.onrender.com/api';
         
         // Check configuration status
         async function checkConfig() {
@@ -269,14 +269,44 @@
         function getAuthToken() {
             const token = localStorage.getItem('authToken');
             if (!token) {
-                const userToken = prompt('Please enter your authentication token (JWT):');
+                // Auto-login for testing purposes
+                console.log('No token found, attempting auto-login...');
+                return autoLogin();
+            }
+            return token;
+        }
+
+        // Auto-login function for testing
+        async function autoLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'boxx',
+                        password: 'Test@123'
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.token) {
+                    localStorage.setItem('authToken', data.token);
+                    console.log('Auto-login successful!');
+                    return data.token;
+                } else {
+                    throw new Error('Auto-login failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Auto-login error:', error);
+                const userToken = prompt('Auto-login failed. Please enter your JWT token manually:');
                 if (userToken) {
                     localStorage.setItem('authToken', userToken);
                     return userToken;
                 }
                 throw new Error('Authentication required');
             }
-            return token;
         }
 
         // Form submission

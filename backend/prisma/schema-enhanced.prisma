@@ -311,6 +311,31 @@ model SystemConfig {
   @@index([key])
 }
 
+// File Upload Model for AWS S3 Integration
+model FileUpload {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  s3Key       String   @unique
+  s3Bucket    String
+  s3Url       String
+  uploadedBy  Int?
+  user        User?    @relation(fields: [uploadedBy], references: [id])
+  category    String   // 'kyc_document', 'profile_image', 'deposit_receipt', etc.
+  status      String   @default("active") // 'active', 'deleted', 'quarantined'
+  metadata    Json?    // Additional file metadata
+  kycDocuments KycDocument[] // KYC documents using this file
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([uploadedBy])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}
+
 // Rate Limiting Model
 model RateLimit {
   id          Int      @id @default(autoincrement())
