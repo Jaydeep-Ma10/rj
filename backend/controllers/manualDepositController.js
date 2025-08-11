@@ -78,63 +78,78 @@ const submitManualDeposit = async (req, res) => {
           s3Key = uploadResult.key;
           s3Bucket = uploadResult.bucket;
           
-          // Create FileUpload record for S3 file
-          const fileUpload = await prisma.fileUpload.create({
-            data: {
-              filename: uploadResult.key,
-              originalName: file.originalname,
-              mimeType: file.mimetype,
-              size: file.size,
-              s3Key: uploadResult.key,      // ✅ FIXED: Use uploadResult.key
-              s3Bucket: uploadResult.bucket, // ✅ FIXED: Use uploadResult.bucket
-              s3Url: uploadResult.location,  // ✅ FIXED: Use uploadResult.location
-              uploadedBy: user.id,
-              category: 'deposit_receipt',
-              status: 'active',
-              metadata: {
-                depositType: 'manual',
-                utr: utr,
-                amount: parseFloat(amount)
+          // Try to create FileUpload record for S3 file (optional - fallback if table doesn't exist)
+          try {
+            const fileUpload = await prisma.fileUpload.create({
+              data: {
+                filename: uploadResult.key,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size,
+                s3Key: uploadResult.key,      // ✅ FIXED: Use uploadResult.key
+                s3Bucket: uploadResult.bucket, // ✅ FIXED: Use uploadResult.bucket
+                s3Url: uploadResult.location,  // ✅ FIXED: Use uploadResult.location
+                uploadedBy: user.id,
+                category: 'deposit_receipt',
+                status: 'active',
+                metadata: {
+                  depositType: 'manual',
+                  originalFilename: file.originalname,
+                  uploadTimestamp: new Date().toISOString()
+                }
               }
-            }
-          });
-          fileUploadId = fileUpload.id;
+            });
+            
+            fileUploadId = fileUpload.id;
+            console.log('✅ FileUpload record created:', fileUpload.id);
+          } catch (fileUploadError) {
+            console.log('⚠️ FileUpload table not available, continuing without record:', fileUploadError.code);
+            // Continue without FileUpload record - deposit will still work
+            fileUploadId = null;
+          }
           
           console.log('✅ Transaction slip uploaded to S3:', {
             location: uploadResult.location,
             key: uploadResult.key,
             bucket: uploadResult.bucket,
-            fileUploadId: fileUpload.id
           });
         } else if (file.path) {
           // File was uploaded locally
           slipUrl = `/uploads/${file.filename}`;
           
-          // Create FileUpload record for local file
-          const fileUpload = await prisma.fileUpload.create({
-            data: {
-              filename: file.filename,
-              originalName: file.originalname,
-              mimeType: file.mimetype,
-              size: file.size,
-              s3Key: `local_${Date.now()}_${file.filename}`, // Unique key for local files
-              s3Bucket: 'local-storage', // Placeholder for local files
-              s3Url: slipUrl, // Use the local file URL
-              uploadedBy: user.id,
-              category: 'deposit_receipt',
-              status: 'active',
-              metadata: {
-                depositType: 'manual',
-                utr: utr,
-                amount: parseFloat(amount),
-                localPath: file.path,
-                isLocalFile: true
+          // Try to create FileUpload record for local file (optional - fallback if table doesn't exist)
+          try {
+            const fileUpload = await prisma.fileUpload.create({
+              data: {
+                filename: file.filename,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size,
+                s3Key: `local_${Date.now()}_${file.filename}`, // Unique key for local files
+                s3Bucket: 'local-storage', // Placeholder for local files
+                s3Url: slipUrl, // Use the local file URL
+                uploadedBy: user.id,
+                category: 'deposit_receipt',
+                status: 'active',
+                metadata: {
+                  depositType: 'manual',
+                  utr: utr,
+                  amount: parseFloat(amount),
+                  localPath: file.path,
+                  isLocalFile: true
+                }
               }
-            }
-          });
-          fileUploadId = fileUpload.id;
+            });
+            
+            fileUploadId = fileUpload.id;
+            console.log(' FileUpload record created for local file:', fileUpload.id);
+          } catch (fileUploadError) {
+            console.log(' FileUpload table not available, continuing without record:', fileUploadError.code);
+            // Continue without FileUpload record - deposit will still work
+            fileUploadId = null;
+          }
           
-          console.log('✅ Transaction slip uploaded locally:', slipUrl);
+          console.log(' Transaction slip uploaded locally:', slipUrl);
         }
       } catch (uploadError) {
         console.error('Error uploading transaction slip:', {
