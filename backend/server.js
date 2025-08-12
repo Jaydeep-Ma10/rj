@@ -132,59 +132,14 @@ function ensureUploadsDir() {
   }
 }
 
-// Apply database migrations
-async function applyMigrations() {
+// Test database connection (no migration handling)
+async function testDatabaseConnection() {
   try {
-    console.log('🔍 Applying database migrations...');
-    
-    try {
-      // First, try to apply migrations normally
-      execSync('npx prisma migrate deploy', { 
-        stdio: 'inherit',
-        env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-      });
-      console.log('✅ Database migrations applied successfully');
-    } catch (migrateError) {
-      console.log('⚠️ Migration failed, attempting to resolve...');
-      
-      // If migration fails, try to resolve it by marking as applied and then deploying
-      try {
-        console.log('🔧 Resolving failed migration...');
-        execSync('npx prisma migrate resolve --rolled-back 20250812101902_make_updatedat_optional', { 
-          stdio: 'inherit',
-          env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-        });
-        
-        // Now try to deploy again
-        execSync('npx prisma migrate deploy', { 
-          stdio: 'inherit',
-          env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-        });
-        console.log('✅ Database migrations resolved and applied successfully');
-        
-        // Verify critical tables exist after migration resolution
-        console.log('🔍 Verifying critical tables exist...');
-        try {
-          execSync('npx prisma db push --accept-data-loss', { 
-            stdio: 'inherit',
-            env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-          });
-          console.log('✅ Database schema verified and synchronized');
-        } catch (verifyError) {
-          console.error('⚠️ Schema verification failed:', verifyError.message);
-        }
-      } catch (resolveError) {
-        console.log('⚠️ Migration resolve failed, using db push as fallback...');
-        // Fallback to db push to sync schema
-        execSync('npx prisma db push --accept-data-loss', { 
-          stdio: 'inherit',
-          env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
-        });
-        console.log('✅ Database schema synchronized using db push');
-      }
-    }
+    console.log('🔍 Testing database connection...');
+    await prisma.$connect();
+    console.log('✅ Database connection successful');
   } catch (error) {
-    console.error('❌ Failed to apply migrations:', error);
+    console.error('❌ Database connection failed:', error);
     throw error;
   }
 }
@@ -255,8 +210,8 @@ async function initializeApp() {
     // 1. Ensure required directories exist
     ensureUploadsDir();
     
-    // 2. Apply database migrations
-    await applyMigrations();
+    // 2. Test database connection (migrations handled by package.json build script)
+    await testDatabaseConnection();
     
     // 3. Initialize admin users
     await initializeAdmins();
@@ -285,9 +240,7 @@ async function initializeApp() {
       });
     });
 
-    // 6. Start the server
-    // httpServer.listen(PORT, ...) REMOVED from here to avoid double listen error.
-    console.log('Round management system initialized');
+    console.log('✅ Application initialized successfully');
 
   } catch (error) {
     console.error('❌ Failed to initialize application:', error);
