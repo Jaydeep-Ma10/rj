@@ -150,7 +150,7 @@ async function applyMigrations() {
       // If migration fails, try to resolve it by marking as applied and then deploying
       try {
         console.log('🔧 Resolving failed migration...');
-        execSync('npx prisma migrate resolve --applied 20250810193627_init', { 
+        execSync('npx prisma migrate resolve --rolled-back 20250812101902_make_updatedat_optional', { 
           stdio: 'inherit',
           env: { ...process.env, NODE_OPTIONS: '--experimental-vm-modules' }
         });

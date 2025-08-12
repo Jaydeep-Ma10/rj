@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
   "test": "echo \"Error: no test specified\" && exit 1",
-  "build": "npx prisma generate && npx prisma migrate resolve --applied 20250812101902_make_updatedat_optional || echo 'Migration resolved' && npx prisma db push --accept-data-loss || npx prisma migrate deploy",
+  "build": "npx prisma generate && npx prisma migrate resolve --rolled-back 20250812101902_make_updatedat_optional && npx prisma db push --force-reset",
   "start": "node server.js",
   "migrate": "npx prisma migrate deploy",
   "resolve-applied": "npx prisma migrate resolve --applied 20250812101902_make_updatedat_optional",

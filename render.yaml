@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: wingo-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: wingo-backend
+          property: port
+    autoDeploy: true
+    rootDir: ./
+    
+databases:
+  - name: wingo-db
+    databaseName: wingo_production
+    user: wingo_user
