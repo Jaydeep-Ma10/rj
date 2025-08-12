@@ -22,20 +22,43 @@ const PORT = process.env.PORT || 10000; // Use Render/Heroku port or 10000 for l
 
 // --- CORS Configuration ---
 const corsOptions = {
-  origin: '*', // Allow all origins for testing
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://rj-755j.onrender.com',
+    'https://resonant-youtiao-a8061f.netlify.app',
+    '*' // Allow all origins for testing
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
 };
 
 // Initialize Express and HTTP server
 const app = express();
 
+// APPLY CORS FIRST - BEFORE ANY ROUTES OR MIDDLEWARE
+app.use(cors(corsOptions));
+
 // Add body parser middleware for JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Add test routes before other middleware
+// CORS preflight handler
+app.options('*', cors(corsOptions));
+
+// Debug route to check CORS
+app.get('/api/cors-test', (req, res) => {
+  res.json({ 
+    message: 'CORS test successful',
+    origin: req.headers.origin,
+    method: req.method,
+    headers: req.headers
+  });
+});
+
+// Add test routes AFTER CORS middleware
 app.get('/api/test', (req, res) => {
   console.log('GET test route hit!');
   res.json({ success: true, message: 'GET test route works!', method: 'GET' });
@@ -103,7 +126,6 @@ app.post('/api/direct-manual-deposit', (req, res) => {
   });
 });
 
-app.use(cors(corsOptions)); // <--- CORS applied before anything else
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
@@ -293,11 +315,8 @@ async function setupRoutes() {
 
 // Configure middleware
 function configureMiddleware() {
-  app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  
-  // Serve static files from public directory
+  // CORS is already applied above, don't apply it again
+  // Static files and other middleware only
   app.use(express.static(path.join(__dirname, 'public')));
   
   // Route to serve the password reset test page
