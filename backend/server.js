@@ -30,6 +30,79 @@ const corsOptions = {
 
 // Initialize Express and HTTP server
 const app = express();
+
+// Add body parser middleware for JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Add test routes before other middleware
+app.get('/api/test', (req, res) => {
+  console.log('GET test route hit!');
+  res.json({ success: true, message: 'GET test route works!', method: 'GET' });
+});
+
+app.post('/api/test-post', (req, res) => {
+  console.log('POST test route hit!', { 
+    headers: req.headers,
+    body: req.body,
+    query: req.query
+  });
+  res.json({ 
+    success: true, 
+    message: 'POST test route works!',
+    method: 'POST',
+    body: req.body,
+    headers: req.headers
+  });
+});
+
+// Direct test route for manual deposit
+app.post('/api/test-manual-deposit', (req, res) => {
+  console.log('Direct test manual deposit route hit!', { 
+    headers: req.headers,
+    body: req.body,
+    query: req.query
+  });
+  
+  // Simulate the manual deposit controller
+  res.json({ 
+    success: true, 
+    message: 'Direct test manual deposit route works!',
+    method: 'POST',
+    body: req.body
+  });
+});
+
+// Direct manual deposit route for testing
+app.post('/api/direct-manual-deposit', (req, res) => {
+  console.log('Direct manual deposit route hit!', { 
+    headers: req.headers,
+    body: req.body
+  });
+  
+  // Simple validation
+  if (!req.body.name || !req.body.amount) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Name and amount are required',
+      received: req.body
+    });
+  }
+  
+  // Return success response
+  res.json({ 
+    success: true, 
+    message: 'Manual deposit received',
+    data: {
+      name: req.body.name,
+      amount: req.body.amount,
+      utr: req.body.utr || 'TEST-UTR-123',
+      method: req.body.method || 'TEST',
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
 app.use(cors(corsOptions)); // <--- CORS applied before anything else
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
@@ -233,7 +306,7 @@ async function setupRoutes() {
     { path: '/api', module: './routes/authRoutes.js' },
     { path: '/api/password-reset', module: './routes/passwordResetRoutes.js' },
     { path: '/api', module: './routes/manualWithdrawRoutes.js' },
-    { path: '/api/wingo', module: './routes/wingoRoutes.js' },
+    { path: '/api', module: './routes/wingoRoutes.js' },
     { path: '/api/files', module: './routes/fileUpload.js' },
     { path: '/admin', module: './routes/adminAuthRoutes.js' }
   ];
@@ -241,8 +314,18 @@ async function setupRoutes() {
   // Load routes sequentially to ensure proper loading
   for (const route of routes) {
     try {
+      console.log(`🔍 Attempting to load route: ${route.module} at ${route.path}`);
       const module = await import(route.module);
       const router = module.default;
+      
+      // Log the router's stack to see what routes are registered
+      console.log(`📋 Router for ${route.module} has ${router.stack?.length || 0} routes`);
+      if (router.stack) {
+        router.stack.forEach(layer => {
+          console.log(`  - ${layer.route?.path} (${Object.keys(layer.route?.methods || {}).filter(m => layer.route?.methods[m])})`);
+        });
+      }
+      
       app.use(route.path, router);
       console.log(`✅ Loaded route: ${route.module} at ${route.path}`);
     } catch (error) {

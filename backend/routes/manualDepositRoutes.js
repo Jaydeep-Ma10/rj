@@ -1,8 +1,8 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { submitManualDeposit } from '../controllers/manualDepositController.js';
-import { 
-  transactionSlipUpload, 
+import {
+  transactionSlipUpload,
   isS3Configured,
   BUCKET_NAME,
   s3Client
@@ -11,139 +11,139 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 const router = express.Router();
 
-// 📥 POST /api/manual-deposit - Submit manual deposit with transaction slip
-router.post(
-  '/manual-deposit',
-  // First, handle the file upload if present
-  (req, res, next) => {
-    console.log('Starting manual deposit request processing');
-    console.log('Request headers:', req.headers);
-    
-    // Handle file upload if present
-    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-      console.log('Processing multipart form data');
-      
-      // First, parse the form data and get the file
-      transactionSlipUpload.single('slip')(req, res, (err) => {
-        if (err) {
-          console.error('File upload error:', err);
-          return res.status(400).json({ 
-            errors: [{ 
-              msg: 'File upload failed', 
-              param: 'slip',
-              detail: err.message 
-            }] 
-          });
-        }
-        
-        console.log('File upload processed:', req.file ? 'File received' : 'No file');
-        
-        // If we're using S3 and have a file, upload it to S3
-        if (isS3Configured() && req.file) {
-          console.log('Uploading file to S3...');
-          const s3Key = `transaction-slips/${Date.now()}-${req.file.originalname}`;
-          const params = {
+/**
+ * Middleware to handle slip upload (mandatory)
+ */
+const handleSlipUpload = (req, res, next) => {
+  console.log('📥 Incoming manual deposit request');
+  console.log('Headers:', req.headers);
+
+  transactionSlipUpload.single('slip')(req, res, async (err) => {
+    if (err) {
+      console.error('❌ File upload error:', err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'File upload failed',
+        errors: [{ param: 'slip', msg: err.message }]
+      });
+    }
+
+    // Reject if no file provided
+    if (!req.file) {
+      console.error('❌ Missing transaction slip');
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction slip is required',
+        errors: [{ param: 'slip', msg: 'Transaction slip is required' }]
+      });
+    }
+
+    console.log('✅ File received:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
+    // Upload to S3 if configured
+    if (isS3Configured()) {
+      try {
+        console.log('☁ Uploading file to S3...');
+        const s3Key = `transaction-slips/${Date.now()}-${req.file.originalname}`;
+        await s3Client.send(
+          new PutObjectCommand({
             Bucket: BUCKET_NAME,
             Key: s3Key,
             Body: req.file.buffer,
             ContentType: req.file.mimetype,
             ACL: 'private'
-          };
-          
-          s3Client.send(new PutObjectCommand(params))
-            .then(() => {
-              console.log('File uploaded to S3:', s3Key);
-              req.file.location = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
-              req.file.key = s3Key;
-              req.file.bucket = BUCKET_NAME;
-              next();
-            })
-            .catch(error => {
-              console.error('Error uploading to S3:', error);
-              return res.status(500).json({ 
-                errors: [{ 
-                  msg: 'Failed to upload file to S3',
-                  param: 'slip',
-                  detail: error.message 
-                }] 
-              });
-            });
-        } else {
-          next();
-        }
-      });
-    } else {
-      console.log('No multipart form data detected, proceeding without file');
-      next();
-    }
-  },
-  // Then validate the request
-  [
-    body('name')
-      .notEmpty().withMessage('Name is required')
-      .isString().withMessage('Name must be a string')
-      .trim()
-      .escape(),
-      
-    body('mobile')
-      .optional({ checkFalsy: true })
-      .isMobilePhone('any', { strictMode: false }).withMessage('Must be a valid mobile number')
-      .trim(),
-      
-    body('amount')
-      .notEmpty().withMessage('Amount is required')
-      .isFloat({ gt: 0 }).withMessage('Amount must be a positive number'),
-      
-    body('utr')
-      .notEmpty().withMessage('UTR is required')
-      .isString().withMessage('UTR must be a string')
-      .trim(),
-      
-    body('method')
-      .optional()
-      .isString().withMessage('Method must be a string')
-      .trim()
-      .escape(),
-      
-    // Custom validation middleware
-    (req, res, next) => {
-      console.log('Validating request body:', req.body);
-      console.log('Uploaded file:', req.file ? {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        fieldname: req.file.fieldname
-      } : 'No file uploaded');
-      
-      // File is optional, but if provided, validate it was processed
-      if (req.file && !req.file.location && !req.file.path) {
-        console.error('File upload failed - no location or path');
-        return res.status(400).json({ 
-          errors: [{ 
-            msg: 'Transaction slip upload failed', 
-            param: 'slip',
-            detail: 'File was not processed correctly' 
-          }] 
+          })
+        );
+
+        req.file.location = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
+        req.file.key = s3Key;
+        req.file.bucket = BUCKET_NAME;
+
+        console.log('✅ Uploaded to S3:', s3Key);
+      } catch (uploadErr) {
+        console.error('❌ S3 upload failed:', uploadErr.message);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload slip to S3',
+          errors: [{ param: 'slip', msg: uploadErr.message }]
         });
       }
-      
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        console.error('Validation errors:', errors.array());
-        return res.status(400).json({ 
-          errors: errors.array().map(err => ({
-            ...err,
-            value: undefined // Don't send back the actual values
-          }))
-        });
-      }
-      
-      console.log('Request validation passed');
-      next();
     }
-  ],
-  // Finally, process the request
-  submitManualDeposit
+
+    next();
+  });
+};
+
+/**
+ * Validation rules
+ */
+const depositValidationRules = [
+  body('name')
+    .notEmpty().withMessage('Name is required')
+    .isString().withMessage('Name must be a string')
+    .trim()
+    .isLength({ min: 3, max: 50 }).withMessage('Name must be between 3 and 50 characters'),
+
+  body('mobile')
+    .optional({ checkFalsy: true })
+    .isMobilePhone('any', { strictMode: false }).withMessage('Must be a valid mobile number')
+    .isLength({ min: 8, max: 15 }).withMessage('Mobile number must be between 8 and 15 digits'),
+
+  body('amount')
+    .notEmpty().withMessage('Amount is required')
+    .isFloat({ min: 1, max: 1000000 }).withMessage('Amount must be between 1 and 1,000,000')
+    .toFloat(),
+
+  body('utr')
+    .notEmpty().withMessage('UTR is required')
+    .isString().withMessage('UTR must be a string')
+    .trim()
+    .isLength({ min: 8, max: 50 }).withMessage('UTR must be between 8 and 50 characters'),
+
+  body('method')
+    .optional()
+    .isString().withMessage('Payment method must be a string')
+    .isLength({ max: 50 }).withMessage('Payment method cannot exceed 50 characters')
+];
+
+/**
+ * Validation result handler
+ */
+const handleValidationResult = (req, res, next) => {
+  console.log('📄 Validating deposit request body:', req.body);
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.error('❌ Validation failed:', errors.array());
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
+  }
+
+  next();
+};
+
+/**
+ * POST /manual-deposit
+ */
+router.post(
+  '/manual-deposit',
+  handleSlipUpload,
+  depositValidationRules,
+  handleValidationResult,
+  async (req, res, next) => {
+    try {
+      await submitManualDeposit(req, res);
+    } catch (err) {
+      next(err);
+    }
+  }
 );
 
 export default router;

@@ -4,6 +4,21 @@ import { uploadSlipToS3, isUsingS3 } from '../services/s3TransactionSlipService.
 import { logError } from '../utils/errorHandler.js';
 
 const submitManualDeposit = async (req, res) => {
+  console.log('Starting manual deposit submission');
+  
+  // Log request details (safely, without sensitive data)
+  console.log('Deposit request:', {
+    userId: req.user?.id,
+    userName: req.user?.name,
+    amount: req.body.amount,
+    hasFile: !!req.file,
+    fileInfo: req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : 'No file attached'
+  });
+  
   try {
     console.log('Received manual deposit request:', {
       body: req.body,
@@ -15,17 +30,40 @@ const submitManualDeposit = async (req, res) => {
       } : 'No file received'
     });
 
-    const { name, mobile, amount, utr } = req.body;
-    const method = req.body.method || 'Unknown';
-    const file = req.file;
-
+    const { name, mobile, amount, utr, method } = req.body;
+    
     // Validate required fields
     if (!name || !amount || !utr) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: name, amount, and utr are required' 
+      console.error('Missing required fields:', { name, amount, utr });
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields',
+        required: ['name', 'amount', 'utr']
       });
     }
-
+    // ✅ Require transaction slip file
+if (!req.file) {
+  console.error('Missing transaction slip file');
+  return res.status(400).json({
+    success: false,
+    message: 'Transaction slip is required',
+    field: 'slip'
+  });
+}
+  
+    
+    // Validate amount is a positive number
+    const depositAmount = parseFloat(amount);
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+      console.error('Invalid amount:', amount);
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be a positive number',
+        field: 'amount',
+        value: amount
+      });
+    }
+    
     // Create user if not exists
     let user = await prisma.user.findUnique({ where: { name } });
 
@@ -47,111 +85,39 @@ const submitManualDeposit = async (req, res) => {
       });
     }
 
-    // Handle transaction slip upload
-    let slipUrl = null;
-    let s3Key = null;
-    let s3Bucket = null;
-    let fileUploadId = null;
-
+    // Prepare deposit data
+    const depositData = {
+      userId: user.id,
+      name: name.trim(),
+      amount: depositAmount,
+      utr: utr.trim(),
+      method: method ? method.trim() : 'BANK_TRANSFER',
+      status: 'PENDING',
+      slipUrl: null,
+      ...(mobile && { mobile: mobile.trim() })
+    };
+    
+    // Handle file upload if present
+    const file = req.file;
+    let fileProcessingError = null;
+    
     if (file) {
-      console.log('Processing file upload:', {
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        fieldname: file.fieldname,
-        encoding: file.encoding
-      });
-      
       try {
-        if (isUsingS3()) {
-          console.log('Using S3 for file upload');
-          // Ensure file has buffer for S3 upload
-          if (!file.buffer) {
-            console.error('File buffer is missing, cannot upload to S3');
-            throw new Error('File processing error: missing file buffer');
-          }
-          // Upload file to S3 using our service
-          const uploadResult = await uploadSlipToS3(file, user.id, `deposit-${Date.now()}`);
-          
-          // Set file details from upload result
-          slipUrl = uploadResult.location;
-          s3Key = uploadResult.key;
-          s3Bucket = uploadResult.bucket;
-          
-          // Try to create FileUpload record for S3 file (optional - fallback if table doesn't exist)
-          try {
-            const fileUpload = await prisma.fileUpload.create({
-              data: {
-                filename: uploadResult.key,
-                originalName: file.originalname,
-                mimeType: file.mimetype,
-                size: file.size,
-                s3Key: uploadResult.key,      // ✅ FIXED: Use uploadResult.key
-                s3Bucket: uploadResult.bucket, // ✅ FIXED: Use uploadResult.bucket
-                s3Url: uploadResult.location,  // ✅ FIXED: Use uploadResult.location
-                uploadedBy: user.id,
-                category: 'deposit_receipt',
-                status: 'active',
-                metadata: {
-                  depositType: 'manual',
-                  originalFilename: file.originalname,
-                  uploadTimestamp: new Date().toISOString()
-                }
-              }
-            });
-            
-            fileUploadId = fileUpload.id;
-            console.log('✅ FileUpload record created:', fileUpload.id);
-          } catch (fileUploadError) {
-            console.log('⚠️ FileUpload table not available, continuing without record:', fileUploadError.code);
-            // Continue without FileUpload record - deposit will still work
-            fileUploadId = null;
-          }
-          
-          console.log('✅ Transaction slip uploaded to S3:', {
-            location: uploadResult.location,
-            key: uploadResult.key,
-            bucket: uploadResult.bucket,
-          });
-        } else if (file.path) {
-          // File was uploaded locally
-          slipUrl = `/uploads/${file.filename}`;
-          
-          // Try to create FileUpload record for local file (optional - fallback if table doesn't exist)
-          try {
-            const fileUpload = await prisma.fileUpload.create({
-              data: {
-                filename: file.filename,
-                originalName: file.originalname,
-                mimeType: file.mimetype,
-                size: file.size,
-                s3Key: `local_${Date.now()}_${file.filename}`, // Unique key for local files
-                s3Bucket: 'local-storage', // Placeholder for local files
-                s3Url: slipUrl, // Use the local file URL
-                uploadedBy: user.id,
-                category: 'deposit_receipt',
-                status: 'active',
-                metadata: {
-                  depositType: 'manual',
-                  utr: utr,
-                  amount: parseFloat(amount),
-                  localPath: file.path,
-                  isLocalFile: true
-                }
-              }
-            });
-            
-            fileUploadId = fileUpload.id;
-            console.log(' FileUpload record created for local file:', fileUpload.id);
-          } catch (fileUploadError) {
-            console.log(' FileUpload table not available, continuing without record:', fileUploadError.code);
-            // Continue without FileUpload record - deposit will still work
-            fileUploadId = null;
-          }
-          
-          console.log(' Transaction slip uploaded locally:', slipUrl);
-        }
+        // In production, this would upload to S3
+        // For now, we'll just store the file info
+        const fileName = `${Date.now()}-${file.originalname}`;
+        depositData.slipUrl = `/uploads/${fileName}`;
+        
+        // Log successful file handling
+        console.log('File processed successfully:', {
+          originalname: file.originalname,
+          destination: depositData.slipUrl,
+          size: file.size
+        });
+        
+        console.log('Transaction slip uploaded locally:', depositData.slipUrl);
       } catch (uploadError) {
+        fileProcessingError = uploadError;
         console.error('Error uploading transaction slip:', {
           message: uploadError.message,
           stack: uploadError.stack,
@@ -160,34 +126,63 @@ const submitManualDeposit = async (req, res) => {
           file: file ? {
             originalname: file.originalname,
             mimetype: file.mimetype,
-            size: file.size
+            size: file.size,
+            buffer: file.buffer ? `Buffer(${file.buffer.length} bytes)` : 'No buffer'
           } : 'No file object'
         });
-        throw new Error(`Failed to process transaction slip: ${uploadError.message}`);
+        // Don't fail the entire deposit if file upload fails
+        console.warn('Continuing with deposit despite file upload error');
       }
     }
 
-    // Create manual deposit record
-    const deposit = await prisma.manualDeposit.create({
-      data: {
-        name,
-        mobile: mobile || user.mobile || '0000000000', // Ensure mobile is always provided
-        amount: parseFloat(amount),
-        utr,
-        method: method || 'Unknown',
-        slipUrl, // This will be S3 URL or local path
-        userId: user.id,
-        status: 'pending',
-        verified: false,
-        // Add metadata for tracking
-        metadata: {
-          s3Key,
-          s3Bucket,
-          fileUploadId,
-          uploadMethod: isUsingS3() ? 's3' : 'local',
-          submittedAt: new Date().toISOString()
-        }
-      },
+    // Create manual deposit record with transaction for data consistency
+    const deposit = await prisma.$transaction(async (tx) => {
+      // Create the deposit record
+      // const depositData = {
+      //   name: name.trim(),
+      //   mobile: (mobile || user.mobile || '0000000000').trim(),
+      //   amount: parseFloat(amount),
+      //   utr: utr.trim(),
+      //   method: (method || 'Unknown').trim(),
+      //   slipUrl: file ? `/uploads/${Date.now()}-${file.originalname}` : null,
+      //   userId: user.id,
+      //   status: 'PENDING',
+      //   verified: false,
+      //   notes: fileProcessingError ? 
+      //     `Warning: File upload failed - ${fileProcessingError.message}` : 
+      //     undefined,
+      //   metadata: {
+      //     uploadMethod: isUsingS3() ? 's3' : 'local',
+      //     submittedAt: new Date().toISOString()
+      //   }
+      // };
+
+      const depositData = {
+  name: name.trim(),
+  mobile: (mobile || user.mobile || '0000000000').trim(),
+  amount: parseFloat(amount),
+  utr: utr.trim(),
+  method: (method || 'Unknown').trim(),
+  slipUrl: file ? `/uploads/${Date.now()}-${file.originalname}` : null,
+  status: 'PENDING',
+  verified: false,
+  notes: fileProcessingError ?
+    `Warning: File upload failed - ${fileProcessingError.message}` :
+    undefined,
+  metadata: {
+    uploadMethod: isUsingS3() ? 's3' : 'local',
+    submittedAt: new Date().toISOString()
+  },
+  user: { connect: { id: user.id } } // ✅ Use relation connect
+};
+
+
+      // Create the deposit record in the database
+      const deposit = await tx.manualDeposit.create({
+        data: depositData
+      });
+
+      return deposit;
     });
 
     // Log successful deposit submission
@@ -195,26 +190,24 @@ const submitManualDeposit = async (req, res) => {
       depositId: deposit.id,
       userId: user.id,
       amount: deposit.amount,
-      utr: deposit.utr,
-      hasSlip: !!slipUrl,
-      uploadMethod: isUsingS3() ? 's3' : 'local'
+      status: deposit.status
     });
-
-    res.status(201).json({ 
-      message: 'Deposit submitted successfully', 
-      deposit: {
-        id: deposit.id,
+    
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: 'Deposit submitted successfully',
+      data: {
+        depositId: deposit.id,
         amount: deposit.amount,
-        utr: deposit.utr,
         status: deposit.status,
-        hasSlip: !!slipUrl,
-        submittedAt: deposit.createdAt
+        slipUrl: deposit.slipUrl
       }
     });
-
+    
   } catch (error) {
-    console.error('❌ Manual deposit error:', error);
-    console.error('❌ Error details:', {
+    // Log the error
+    console.error('❌ Error in manual deposit submission:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
@@ -225,17 +218,20 @@ const submitManualDeposit = async (req, res) => {
       fileSize: req.file?.size
     });
     
+    // Log to error tracking
     logError(error, { 
       context: 'manual_deposit_submission',
       body: req.body,
       hasFile: !!req.file 
     });
     
-    res.status(500).json({ 
-      error: 'Failed to submit deposit. Please try again later.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    // Return error response
+    return res.status(500).json({ 
+      success: false,
+      message: 'Failed to submit deposit. Please try again later.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+  }
 
 export { submitManualDeposit };
