@@ -5,11 +5,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "prisma generate && prisma migrate deploy",
-    "start": "node server.js",
-    "migrate": "npx prisma migrate deploy"
-  },
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "build": "prisma generate && prisma migrate deploy",
+  "start": "node server.js",
+  "migrate": "npx prisma migrate deploy",
+  "resolve-applied": "npx prisma migrate resolve --applied 20250812101902_make_updatedat_optional",
+  "resolve-rolledback": "npx prisma migrate resolve --rolled-back 20250812101902_make_updatedat_optional",
+  "reset-db": "npx prisma migrate reset --force"
+}
+,
   "keywords": [],
   "author": "",
   "license": "ISC",
