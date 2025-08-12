@@ -103,19 +103,35 @@ if (!req.file) {
     
     if (file) {
       try {
-        // In production, this would upload to S3
-        // For now, we'll just store the file info
-        const fileName = `${Date.now()}-${file.originalname}`;
-        depositData.slipUrl = `/uploads/${fileName}`;
-        
-        // Log successful file handling
-        console.log('File processed successfully:', {
-          originalname: file.originalname,
-          destination: depositData.slipUrl,
-          size: file.size
-        });
-        
-        console.log('Transaction slip uploaded locally:', depositData.slipUrl);
+        // Check if S3 storage was used (file will have S3 metadata)
+        if (file.key && file.bucket) {
+          // S3 upload was successful, use S3 URL
+          depositData.slipUrl = file.location || `https://${file.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${file.key}`;
+          depositData.s3Key = file.key;
+          depositData.s3Bucket = file.bucket;
+          
+          console.log('File processed successfully with S3:', {
+            originalname: file.originalname,
+            s3Key: file.key,
+            s3Bucket: file.bucket,
+            s3Url: depositData.slipUrl,
+            size: file.size
+          });
+          
+          console.log('Transaction slip uploaded to S3:', depositData.slipUrl);
+        } else {
+          // Fallback to local storage (for development or when S3 is not configured)
+          const fileName = `${Date.now()}-${file.originalname}`;
+          depositData.slipUrl = `/uploads/${fileName}`;
+          
+          console.log('File processed successfully (local storage):', {
+            originalname: file.originalname,
+            destination: depositData.slipUrl,
+            size: file.size
+          });
+          
+          console.log('Transaction slip uploaded locally:', depositData.slipUrl);
+        }
       } catch (uploadError) {
         fileProcessingError = uploadError;
         console.error('Error uploading transaction slip:', {
@@ -157,25 +173,50 @@ if (!req.file) {
       //   }
       // };
 
-      const depositData = {
-  name: name.trim(),
-  mobile: (mobile || user.mobile || '0000000000').trim(),
-  amount: parseFloat(amount),
-  utr: utr.trim(),
-  method: (method || 'Unknown').trim(),
-  slipUrl: file ? `/uploads/${Date.now()}-${file.originalname}` : null,
-  status: 'PENDING',
-  verified: false,
-  notes: fileProcessingError ?
-    `Warning: File upload failed - ${fileProcessingError.message}` :
-    undefined,
-  metadata: {
-    uploadMethod: isUsingS3() ? 's3' : 'local',
-    submittedAt: new Date().toISOString()
-  },
-  user: { connect: { id: user.id } } // ✅ Use relation connect
-};
+      // Prepare base metadata
+      let metadata = {
+        uploadMethod: isUsingS3() ? 's3' : 'local',
+        submittedAt: new Date().toISOString()
+      };
 
+      // Add S3 metadata if file was uploaded to S3
+      if (file && file.key && file.bucket) {
+        metadata = {
+          ...metadata,
+          s3Key: file.key,
+          s3Bucket: file.bucket,
+          originalFileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          storageType: 'S3'
+        };
+      } else if (file) {
+        metadata = {
+          ...metadata,
+          originalFileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          storageType: 'LOCAL'
+        };
+      }
+
+      const depositData = {
+        name: name.trim(),
+        mobile: (mobile || user.mobile || '0000000000').trim(),
+        amount: parseFloat(amount),
+        utr: utr.trim(),
+        method: (method || 'Unknown').trim(),
+        slipUrl: file && file.key && file.bucket ? 
+          (file.location || `https://${file.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${file.key}`) :
+          (file ? `/uploads/${Date.now()}-${file.originalname}` : null),
+        status: 'PENDING',
+        verified: false,
+        userId: user.id,
+        notes: fileProcessingError ?
+          `Warning: File upload failed - ${fileProcessingError.message}` :
+          undefined,
+        metadata: metadata
+      };
 
       // Create the deposit record in the database
       const deposit = await tx.manualDeposit.create({
