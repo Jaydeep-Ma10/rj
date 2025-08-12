@@ -89,6 +89,20 @@ export const getDeposits = async (req, res) => {
               
               // Generate signed URL for S3
               slipViewUrl = await getSlipSignedUrl(key, 3600); // 1 hour expiry
+              
+              // Ensure the URL is absolute (starts with http:// or https://)
+              if (slipViewUrl && !slipViewUrl.startsWith('http')) {
+                console.warn(`Generated signed URL is not absolute: ${slipViewUrl}`);
+                slipViewUrl = `https://${slipViewUrl}`;
+              }
+              
+              console.log('Final slip view URL:', {
+                depositId: deposit.id,
+                originalUrl: deposit.slipUrl,
+                signedUrl: slipViewUrl,
+                isAbsolute: slipViewUrl?.startsWith('http')
+              });
+              
               hasSlip = true;
             } else {
               console.warn(`No S3 key found for deposit ${deposit.id}`);
@@ -101,8 +115,18 @@ export const getDeposits = async (req, res) => {
               slipUrl: deposit.slipUrl,
               metadata: deposit.metadata
             });
-            // Fall back to direct URL if available
-            hasSlip = !!deposit.slipUrl;
+            // Fall back to direct S3 URL if available
+            if (deposit.slipUrl) {
+              slipViewUrl = deposit.slipUrl;
+              // Ensure fallback URL is absolute
+              if (!slipViewUrl.startsWith('http')) {
+                slipViewUrl = `https://${slipViewUrl}`;
+              }
+              hasSlip = true;
+              console.log('Using fallback S3 URL:', slipViewUrl);
+            } else {
+              hasSlip = false;
+            }
           }
         } else if (deposit.slipUrl) {
           // Local file or direct URL
@@ -294,6 +318,19 @@ export const getDepositDetails = async (req, res) => {
           
           // Generate signed URL for S3
           slipViewUrl = await getSlipSignedUrl(key, 3600); // 1 hour expiry
+          
+          // Ensure the URL is absolute (starts with http:// or https://)
+          if (slipViewUrl && !slipViewUrl.startsWith('http')) {
+            console.warn(`Generated signed URL is not absolute: ${slipViewUrl}`);
+            slipViewUrl = `https://${slipViewUrl}`;
+          }
+          
+          console.log('Final slip view URL for details:', {
+            depositId: deposit.id,
+            originalUrl: deposit.slipUrl,
+            signedUrl: slipViewUrl,
+            isAbsolute: slipViewUrl?.startsWith('http')
+          });
           hasSlip = true;
           uploadMethod = 's3';
           
