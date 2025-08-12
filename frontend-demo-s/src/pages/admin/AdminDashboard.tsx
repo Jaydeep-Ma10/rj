@@ -11,6 +11,26 @@ const AdminDashboard = () => {
 
   const paymentMethods = ["Paytm Pay", "PhonePe", "Google Pay", "Others"];
 
+  // Helper function to construct proper slip URL
+  const getSlipUrl = (deposit: any) => {
+    // Priority: slipViewUrl (signed S3 URL) > absolute slipUrl > relative slipUrl with base
+    if (deposit.slipViewUrl) {
+      return deposit.slipViewUrl;
+    }
+    
+    if (deposit.slipUrl) {
+      // If it's already an absolute URL (starts with http/https), use it directly
+      if (deposit.slipUrl.startsWith('http://') || deposit.slipUrl.startsWith('https://')) {
+        return deposit.slipUrl;
+      }
+      
+      // Otherwise, it's a relative URL, prepend the base URL
+      return `https://rj-755j.onrender.com${deposit.slipUrl}`;
+    }
+    
+    return null;
+  };
+
   // Group deposits by method
   const groupedDeposits = paymentMethods.reduce((acc, method) => {
     acc[method] = deposits.filter(d => (d.method || "Others").toLowerCase() === method.toLowerCase());
@@ -132,7 +152,7 @@ const AdminDashboard = () => {
                     <td className="py-2 px-2">₹{d.amount}</td>
                     <td className="py-2 px-2">{d.utr}</td>
                     <td className="py-2 px-2">{d.method}</td>
-                    <td className="py-2 px-2">{d.slipUrl ? <a href={`https://rj-755j.onrender.com${d.slipUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
+                    <td className="py-2 px-2">{getSlipUrl(d) ? <a href={getSlipUrl(d)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
                     <td className="py-2 px-2">{new Date(d.createdAt).toLocaleString()}</td>
                     <td className="py-2 px-2 capitalize">{d.status}</td>
                     <td className="py-2 px-2">

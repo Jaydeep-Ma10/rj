@@ -106,7 +106,17 @@ if (!req.file) {
         // Check if S3 storage was used (file will have S3 metadata)
         if (file.key && file.bucket) {
           // S3 upload was successful, use S3 URL
-          depositData.slipUrl = file.location || `https://${file.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${file.key}`;
+          let s3Url = file.location;
+          if (!s3Url) {
+            s3Url = `https://${file.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${file.key}`;
+          }
+          
+          // Ensure the URL has proper protocol
+          if (s3Url && !s3Url.startsWith('https://') && !s3Url.startsWith('http://')) {
+            s3Url = `https://${s3Url}`;
+          }
+          
+          depositData.slipUrl = s3Url;
           depositData.s3Key = file.key;
           depositData.s3Bucket = file.bucket;
           

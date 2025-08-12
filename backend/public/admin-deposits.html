@@ -356,7 +356,23 @@
             modalCreatedAt.textContent = formatDate(deposit.createdAt);
             
             // Set slip image - use slipViewUrl which contains the signed S3 URL if available
-            const imageUrl = deposit.slipViewUrl || deposit.slipUrl;
+            let imageUrl = deposit.slipViewUrl || deposit.slipUrl;
+            
+            // Fix malformed URLs that might be missing protocol or have double protocols
+            if (imageUrl) {
+                // Remove any double protocols (e.g., "https://domain.comhttps://s3.amazonaws.com")
+                imageUrl = imageUrl.replace(/^https?:\/\/[^\/]+https?:\/\//, 'https://');
+                
+                // Ensure the URL starts with http:// or https://
+                if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                    imageUrl = 'https://' + imageUrl;
+                }
+                
+                console.log('Fixed image URL:', {
+                    original: deposit.slipViewUrl || deposit.slipUrl,
+                    fixed: imageUrl
+                });
+            }
             if (imageUrl) {
                 // Create a new image object to test loading
                 const img = new Image();
