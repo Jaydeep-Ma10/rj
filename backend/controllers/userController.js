@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 // Get user profile
 export const getUserProfile = async (req, res) => {
   try {
-    const { name } = req.params;
+    const { mobile } = req.params;
     const user = await prisma.user.findUnique({
-      where: { name },
+      where: { mobile },
       select: {
         id: true,
         name: true,
@@ -29,13 +29,13 @@ export const getUserProfile = async (req, res) => {
 
 export const getUserDeposits = async (req, res) => {
   try {
-    const { name } = req.params;
-    const user = await prisma.user.findUnique({ where: { name } });
+    const { mobile } = req.params;
+    const user = await prisma.user.findUnique({ where: { mobile } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     const deposits = await prisma.manualDeposit.findMany({
-      where: { name },
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
     });
     res.json({ deposits });
@@ -48,13 +48,13 @@ export const getUserDeposits = async (req, res) => {
 // Get all withdrawals for a user
 export const getUserWithdrawals = async (req, res) => {
   try {
-    const { name } = req.params;
-    const user = await prisma.user.findUnique({ where: { name } });
+    const { mobile } = req.params;
+    const user = await prisma.user.findUnique({ where: { mobile } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     const withdrawals = await prisma.manualWithdraw.findMany({
-      where: { name },
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
     });
     res.json({ withdrawals });

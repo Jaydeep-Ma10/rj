@@ -5,12 +5,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const router = express.Router();
 
-router.get('/user/:name/balance', async (req, res) => {
+router.get('/user/:mobile/balance', async (req, res) => {
   try {
-    const { name } = req.params;
+    const { mobile } = req.params;
 
     const user = await prisma.user.findUnique({
-      where: { name },
+      where: { mobile },
     });
 
     if (!user) {
@@ -47,8 +47,8 @@ import {
   getUserWithdrawals
 } from '../controllers/userController.js';
 
-router.get('/user/:name/deposits', getUserDeposits);
-router.get('/user/:name/profile', getUserProfile);
-router.get('/user/:name/withdrawals', getUserWithdrawals);
+router.get('/user/:mobile/deposits', getUserDeposits);
+router.get('/user/:mobile/profile', getUserProfile);
+router.get('/user/:mobile/withdrawals', getUserWithdrawals);
 
 export default router;

@@ -6,7 +6,7 @@ export const submitManualWithdraw = async (req, res) => {
   try {
     const { name, mobile, amount, accountHolder, accountNumber, ifsc } = req.body;
     // Check user balance
-    const user = await prisma.user.findUnique({ where: { name } });
+    const user = await prisma.user.findUnique({ where: { mobile } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -55,9 +55,9 @@ export const verifyWithdrawal = async (req, res) => {
       data: { status: 'approved' }
     });
 
-    // Step 2: Find the user by name
+    // Step 2: Find the user by mobile
     const user = await prisma.user.findUnique({
-      where: { name: withdrawal.name }
+      where: { mobile: withdrawal.mobile }
     });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });

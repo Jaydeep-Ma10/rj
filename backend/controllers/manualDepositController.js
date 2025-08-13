@@ -65,7 +65,7 @@ if (!req.file) {
     }
     
     // Create user if not exists
-    let user = await prisma.user.findUnique({ where: { name } });
+    let user = await prisma.user.findUnique({ where: { mobile } });
 
     if (!user) {
       user = await prisma.user.create({
