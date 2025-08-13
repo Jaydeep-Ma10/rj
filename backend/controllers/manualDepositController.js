@@ -2,6 +2,7 @@
 import { prisma } from '../prisma/client.js';
 import { uploadSlipToS3, isUsingS3 } from '../services/s3TransactionSlipService.js';
 import { logError } from '../utils/errorHandler.js';
+import { validateName, validateMobile } from '../utils/validators.js';
 
 const submitManualDeposit = async (req, res) => {
   console.log('Starting manual deposit submission');
@@ -33,13 +34,39 @@ const submitManualDeposit = async (req, res) => {
     const { name, mobile, amount, utr, method } = req.body;
     
     // Validate required fields
-    if (!name || !amount || !utr) {
-      console.error('Missing required fields:', { name, amount, utr });
+    if (!amount || !utr) {
+      console.error('Missing required fields:', { amount, utr });
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
-        required: ['name', 'amount', 'utr']
+        required: ['amount', 'utr']
       });
+    }
+
+    // Validate name if provided
+    if (name) {
+      const nameValidation = validateName(name);
+      if (!nameValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          field: 'name',
+          errors: nameValidation.errors
+        });
+      }
+    }
+
+    // Validate mobile if provided
+    if (mobile) {
+      const mobileValidation = validateMobile(mobile);
+      if (!mobileValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          field: 'mobile',
+          errors: mobileValidation.errors
+        });
+      }
     }
     // ✅ Require transaction slip file
 if (!req.file) {

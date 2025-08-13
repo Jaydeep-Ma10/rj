@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import validator from 'validator';
-const { isMobilePhone } = validator;
+import { validateAll } from '../utils/validators';
 
 const prisma = new PrismaClient();
 
@@ -12,42 +11,31 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme_development_only';
 
-// Input validation middleware
+// Input validation middleware using centralized validator
 const validateSignupInput = (data) => {
-  const errors = {};
-  
-  if (!data.name || data.name.trim().length < 2) {
-    errors.name = 'Name must be at least 2 characters long';
-  }
-  
-  if (!data.mobile || !isMobilePhone(data.mobile, 'en-IN')) {
-    errors.mobile = 'Please enter a valid Indian mobile number';
-  }
-  
-  if (!data.password || data.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters long';
-  }
-  
+  const { isValid, errors, values } = validateAll({
+    name: data.name,
+    mobile: data.mobile,
+    password: data.password
+  });
+
   return {
-    errors,
-    isValid: Object.keys(errors).length === 0
+    errors: errors || {},
+    isValid,
+    values
   };
 };
 
 const validateLoginInput = (data) => {
-  const errors = {};
-  
-  if (!data.mobile || !isMobilePhone(data.mobile, 'en-IN')) {
-    errors.mobile = 'Please enter a valid Indian mobile number';
-  }
-  
-  if (!data.password) {
-    errors.password = 'Password is required';
-  }
-  
+  const { isValid, errors, values } = validateAll({
+    mobile: data.mobile,
+    password: data.password
+  });
+
   return {
-    errors,
-    isValid: Object.keys(errors).length === 0
+    errors: errors || {},
+    isValid,
+    values
   };
 };
 
@@ -66,10 +54,17 @@ export const signup = async (req, res) => {
   try {
     const { name, mobile, password, referralCode } = req.body;
     
-    // Input validation
-    const { errors, isValid } = validateSignupInput({ name, mobile, password });
+    // Validate input using centralized validator
+    const { errors, isValid, values } = validateSignupInput(req.body);
     if (!isValid) {
-      return res.status(400).json({ error: 'Validation failed', details: errors });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validation failed',
+        errors: Object.entries(errors).reduce((acc, [field, error]) => ({
+          ...acc,
+          [field]: error.errors[0] // Get the first error message
+        }), {})
+      });
     }
     const existingUser = await prisma.user.findUnique({ 
       where: { 
@@ -107,7 +102,17 @@ export const signup = async (req, res) => {
         },
       });
       const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
-      return res.status(201).json({ token, user: { id: user.id, name: user.name, mobile: user.mobile, referralCode: user.referralCode } });
+      return res.status(201).json({ 
+        token, 
+        user: { 
+          uid: user.id,
+          id: user.id, 
+          name: user.name, 
+          mobile: user.mobile, 
+          referralCode: user.referralCode,
+          balance: user.balance || 0
+        } 
+      });
     } catch (createError) {
       console.error('User creation error:', createError);
       if (createError.code === 'P2002') {
@@ -133,10 +138,17 @@ export const login = async (req, res) => {
   try {
     const { mobile, password } = req.body;
     
-    // Input validation
-    const { errors, isValid } = validateLoginInput({ mobile, password });
+    // Validate input using centralized validator
+    const { errors, isValid, values } = validateLoginInput(req.body);
     if (!isValid) {
-      return res.status(400).json({ error: 'Validation failed', details: errors });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validation failed',
+        errors: Object.entries(errors).reduce((acc, [field, error]) => ({
+          ...acc,
+          [field]: error.errors[0] // Get the first error message
+        }), {})
+      });
     }
     
     // Find user and validate password with constant-time comparison
@@ -152,7 +164,17 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, mobile: user.mobile, referralCode: user.referralCode } });
+    res.json({ 
+      token, 
+      user: { 
+        uid: user.id,
+        id: user.id, 
+        name: user.name, 
+        mobile: user.mobile, 
+        referralCode: user.referralCode,
+        balance: user.balance || 0
+      } 
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
