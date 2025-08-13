@@ -2,42 +2,99 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useAuth } from "../hooks/useAuth";
-import { ArrowLeft } from "lucide-react";
-import { RiSmartphoneFill } from "react-icons/ri";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { RiSmartphoneFill, RiErrorWarningFill } from "react-icons/ri";
 import { FaLock } from "react-icons/fa";
 import { BiSolidLock } from "react-icons/bi";
 import { RiCustomerService2Line } from "react-icons/ri";
+import { isMobilePhone } from "validator";
 
 interface LoginProps {
   setNotif?: (n: { message: string; type?: "success" | "error" }) => void;
 }
 
+interface FormErrors {
+  mobile?: string;
+  password?: string;
+  general?: string;
+}
+
 const Login = ({ setNotif }: LoginProps) => {
   const [form, setForm] = useState({ mobile: "", password: "" });
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState({
+    mobile: false,
+    password: false,
+  });
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!form.mobile || !isMobilePhone(form.mobile, 'en-IN')) {
+      newErrors.mobile = 'Please enter a valid Indian mobile number';
+    }
+
+    if (!form.password) {
+      newErrors.password = 'Password is required';
+    } else if (form.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (field: keyof typeof touched) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateForm();
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'mobile' ? value.replace(/\D/g, '').slice(0, 10) : value
+    }));
+
+    // Clear error when user types
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setTouched({ mobile: true, password: true });
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrors({});
+
     try {
-      const res = await api.post("/login", form);
+      const res = await api.post("/login", {
+        mobile: form.mobile,
+        password: form.password
+      });
+
       login(res.data.user, res.data.token);
       navigate("/");
+      setNotif?.({ message: "Login successful!", type: "success" });
     } catch (err: any) {
-      const msg = err.response?.data?.error || "Login failed";
-      if (msg.toLowerCase().includes("not found")) {
-        setNotif?.({ message: "Please signup first.", type: "error" });
-      } else {
-        setNotif?.({ message: msg, type: "error" });
-      }
+      console.error('Login error:', err);
+      const errorMsg = err.response?.data?.error || "Login failed. Please try again.";
+      setErrors({ general: errorMsg });
+      setNotif?.({ message: errorMsg, type: "error" });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -59,7 +116,7 @@ const Login = ({ setNotif }: LoginProps) => {
           <div className="text-[#66A9FF] mb-1">Your Phone</div>
           <div className="border-[1px] border-[#66A9FF] w-full" />
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <div className="flex items-center gap-2 py-4 text-white">
@@ -70,17 +127,31 @@ const Login = ({ setNotif }: LoginProps) => {
               <div className="bg-[#2B3270] text-center py-2 flex-[1] text-gray-300 rounded-lg">
                 +91
               </div>
-              <input
-                type="tel"
-                name="mobile"
-                value={form.mobile}
-                onChange={handleChange}
-                className="bg-[#2B3270] py-2 flex-[3] text-white rounded-lg px-2"
-                placeholder="Enter 10-digit mobile number"
-                maxLength={10}
-                pattern="[0-9]{10}"
-                required
-              />
+              <div className="relative flex-1">
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={form.mobile}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('mobile')}
+                  className={`bg-[#2B3270] py-3 w-full text-white rounded-lg px-4 pr-10 border ${
+                    errors.mobile && touched.mobile ? 'border-red-500' : 'border-transparent'
+                  }`}
+                  placeholder="Enter 10-digit mobile number"
+                  maxLength={10}
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  disabled={isSubmitting}
+                />
+                {errors.mobile && touched.mobile && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500">
+                    <RiErrorWarningFill className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              {errors.mobile && touched.mobile && (
+                <p className="mt-1 text-sm text-red-500">{errors.mobile}</p>
+              )}
             </div>
           </div>
 
@@ -90,29 +161,56 @@ const Login = ({ setNotif }: LoginProps) => {
               Password
             </div>
             <div className="flex justify-center items-center gap-2">
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                className="bg-[#2B3270] py-2 flex-1 text-white rounded-lg px-2"
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative w-full">
+                <input
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('password')}
+                  className={`bg-[#2B3270] py-3 w-full text-white rounded-lg px-4 pr-10 border ${
+                    errors.password && touched.password ? 'border-red-500' : 'border-transparent'
+                  }`}
+                  placeholder="Enter your password"
+                  disabled={isSubmitting}
+                />
+                {errors.password && touched.password && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500">
+                    <RiErrorWarningFill className="w-5 h-5" />
+                  </div>
+                )}
+              </div>
+              {errors.password && touched.password && (
+                <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+              )}
             </div>
           </div>
 
           <div className="flex justify-center items-center flex-col mt-6 gap-4">
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 py-2 w-full bg-gradient-to-r from-[#2AAAF3] to-[#2979F2] text-white text-lg font-semibold rounded-3xl"
+              disabled={isSubmitting}
+              className={`flex items-center justify-center gap-2 py-3 w-full bg-gradient-to-r from-[#2AAAF3] to-[#2979F2] text-white text-lg font-semibold rounded-3xl ${
+                isSubmitting ? 'opacity-75' : 'hover:opacity-90'
+              } transition-opacity`}
             >
-              {loading ? "Logging in..." : "Login"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                'Login'
+              )}
             </button>
-            <button 
+            {errors.general && (
+              <div className="mt-2 p-2 bg-red-100 text-red-700 text-sm rounded-lg">
+                {errors.general}
+              </div>
+            )}
+            <button
               type="button"
-              onClick={() => navigate("/signup")} 
+              onClick={() => navigate("/signup")}
               className="flex-1 py-2 w-full border-[1px] border-[#61A9FF] text-[#61A9FF] text-lg font-semibold rounded-3xl"
             >
               Register

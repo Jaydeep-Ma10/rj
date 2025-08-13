@@ -32,8 +32,8 @@ model ManualDeposit {
 
 model User {
   id             Int             @id @default(autoincrement())
-  name           String          @unique
-  mobile         String
+  name           String
+  mobile         String          @unique
   balance        Float           @default(0)
   createdAt      DateTime        @default(now())
   password       String
