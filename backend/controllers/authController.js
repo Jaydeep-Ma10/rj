@@ -96,20 +96,35 @@ export const signup = async (req, res) => {
       }
       referredBy = referralCode;
     }
-    const user = await prisma.user.create({
-      data: {
-        name,
-        mobile,
-        password: hashedPassword,
-        referralCode: userReferralCode,
-        referredBy,
-      },
-    });
-    const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: { id: user.id, name: user.name, mobile: user.mobile, referralCode: user.referralCode } });
+    try {
+      const user = await prisma.user.create({
+        data: {
+          name,
+          mobile,
+          password: hashedPassword,
+          referralCode: userReferralCode,
+          referredBy,
+        },
+      });
+      const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
+      return res.status(201).json({ token, user: { id: user.id, name: user.name, mobile: user.mobile, referralCode: user.referralCode } });
+    } catch (createError) {
+      console.error('User creation error:', createError);
+      if (createError.code === 'P2002') {
+        if (createError.meta?.target?.includes('name')) {
+          return res.status(400).json({ error: 'This name is already in use. Please choose a different name.' });
+        } else if (createError.meta?.target?.includes('mobile')) {
+          return res.status(409).json({ error: 'A user with this mobile number already exists' });
+        }
+      }
+      throw createError;
+    }
   } catch (err) {
     console.error('Signup error:', err);
-    res.status(500).json({ error: 'Server error' });
+    if (err.code === 'P2002') {
+      return res.status(409).json({ error: 'A user with these details already exists' });
+    }
+    res.status(500).json({ error: 'Server error during signup' });
   }
 };
 

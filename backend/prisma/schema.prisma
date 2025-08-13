@@ -19,11 +19,11 @@ model ManualDeposit {
   createdAt       DateTime  @default(now())
   status          String    @default("pending")
   userId          Int?
-  user            User?     @relation(fields: [userId], references: [id])
   approvedAt      DateTime?
   rejectedAt      DateTime?
   rejectionReason String?
-  metadata        Json? // Store S3 keys, file upload IDs, and other metadata
+  metadata        Json?
+  user            User?     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -39,13 +39,13 @@ model User {
   password       String
   referralCode   String          @unique
   referredBy     String?
+  auditLogs      AuditLog[]
+  fileUploads    FileUpload[]
+  kycDocuments   KycDocument[]
+  manualDeposits ManualDeposit[]
   passwordResets PasswordReset[]
+  userActivities UserActivity[]
   wingoBets      WingoBet[]
-  fileUploads    FileUpload[] // Files uploaded by this user
-  auditLogs      AuditLog[] // Audit trail for this user
-  kycDocuments   KycDocument[] // KYC documents for this user
-  userActivities UserActivity[] // Activity log for this user
-  manualDeposits ManualDeposit[] // Manual deposits by this user
 
   @@index([mobile])
 }
@@ -131,7 +131,6 @@ model PasswordReset {
   @@index([expiresAt])
 }
 
-// File Upload Model for AWS S3 Integration
 model FileUpload {
   id           Int           @id @default(autoincrement())
   filename     String
@@ -142,13 +141,13 @@ model FileUpload {
   s3Bucket     String
   s3Url        String
   uploadedBy   Int?
-  user         User?         @relation(fields: [uploadedBy], references: [id])
-  category     String // 'kyc_document', 'profile_image', 'deposit_receipt', etc.
-  status       String        @default("active") // 'active', 'deleted', 'quarantined'
-  metadata     Json? // Additional file metadata
-  kycDocuments KycDocument[] // KYC documents using this file
+  category     String
+  status       String        @default("active")
+  metadata     Json?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  user         User?         @relation(fields: [uploadedBy], references: [id])
+  kycDocuments KycDocument[]
 
   @@index([uploadedBy])
   @@index([category])
@@ -156,20 +155,19 @@ model FileUpload {
   @@index([createdAt])
 }
 
-// Audit Log Model for Tracking Critical Actions
 model AuditLog {
   id           Int      @id @default(autoincrement())
   userId       Int?
-  user         User?    @relation(fields: [userId], references: [id])
-  action       String // 'login', 'password_reset', 'deposit', 'withdrawal', etc.
-  resource     String // 'user', 'wallet', 'bet', etc.
-  resourceId   String? // ID of the affected resource
-  details      Json? // Additional action details
+  action       String
+  resource     String
+  resourceId   String?
+  details      Json?
   ipAddress    String?
   userAgent    String?
   success      Boolean  @default(true)
   errorMessage String?
   createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -178,21 +176,20 @@ model AuditLog {
   @@index([success])
 }
 
-// KYC Document Tracking
 model KycDocument {
   id              Int         @id @default(autoincrement())
   userId          Int
-  user            User        @relation(fields: [userId], references: [id])
-  documentType    String // 'aadhar', 'pan', 'passport', 'driving_license', etc.
+  documentType    String
   fileUploadId    Int?
-  fileUpload      FileUpload? @relation(fields: [fileUploadId], references: [id])
-  status          String      @default("pending") // 'pending', 'approved', 'rejected'
+  status          String      @default("pending")
   reviewedBy      Int?
   reviewedAt      DateTime?
   rejectionReason String?
-  metadata        Json? // Document-specific metadata
+  metadata        Json?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  fileUpload      FileUpload? @relation(fields: [fileUploadId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([documentType])
@@ -200,17 +197,16 @@ model KycDocument {
   @@index([createdAt])
 }
 
-// User Activity Tracking
 model UserActivity {
   id           Int      @id @default(autoincrement())
   userId       Int
-  user         User     @relation(fields: [userId], references: [id])
-  activityType String // 'login', 'logout', 'bet_placed', 'deposit', etc.
-  details      Json? // Activity-specific details
+  activityType String
+  details      Json?
   ipAddress    String?
   userAgent    String?
   sessionId    String?
   createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([activityType])
