@@ -71,7 +71,11 @@ export const signup = async (req, res) => {
     if (!isValid) {
       return res.status(400).json({ error: 'Validation failed', details: errors });
     }
-    const existingUser = await prisma.user.findUnique({ where: { mobile } });
+    const existingUser = await prisma.user.findUnique({ 
+      where: { 
+        mobile: mobile 
+      } 
+    });
     if (existingUser) {
       return res.status(409).json({ error: 'User with this mobile number already exists' });
     }
