@@ -200,7 +200,7 @@ async function initializeTestUser() {
     console.log('🧪 Checking for test user...');
     
     const testUser = await prisma.user.findUnique({
-      where: { name: 'TestUser' }
+      where: { mobile: '9876543210' }
     });
     
     if (!testUser) {

@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { validateAll } from '../utils/validators';
+import { validateAll } from '../utils/validators.js';
 
 const prisma = new PrismaClient();
 
