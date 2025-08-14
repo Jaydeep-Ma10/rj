@@ -77,22 +77,26 @@ model WingoRoundAnalytics {
 }
 
 model WingoBet {
-  id         Int        @id @default(autoincrement())
-  userId     Int
-  roundId    Int
-  type       String
-  value      String
-  amount     Float
-  multiplier Int
-  createdAt  DateTime   @default(now())
-  win        Boolean?
-  payout     Float?
-  round      WingoRound @relation(fields: [roundId], references: [id])
-  user       User       @relation(fields: [userId], references: [id])
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  roundId         Int
+  type            String
+  value           String
+  amount          Float
+  multiplier      Int       @default(1)
+  win             Boolean?
+  payout          Float?
+  status          String    @default("pending")
+  idempotencyKey  String?   @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+  round           WingoRound @relation(fields: [roundId], references: [id])
 
-  @@index([roundId])
+  @@unique([userId, roundId, type, value], name: "unique_bet_per_round")
   @@index([userId])
-  @@index([createdAt])
+  @@index([roundId])
+  @@index([idempotencyKey])
 }
 
 model Admin {

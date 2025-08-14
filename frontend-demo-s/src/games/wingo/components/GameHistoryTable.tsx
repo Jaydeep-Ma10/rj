@@ -3,6 +3,7 @@ import React, { useState } from "react";
 interface HistoryItem {
   id: string;
   period: string;
+  serialNumber?: string;
   number: number;
 }
 
@@ -101,7 +102,12 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
           <tbody>
             {currentItems.map((item) => (
               <tr key={item.id} className="border-b border-gray-700 hover:bg-[#33416d]">
-                <td className="py-2 px-3 text-xs">{item.period}</td>
+                <td className="py-2 px-3 text-left text-xs font-mono">
+                  {new Date().toISOString()
+                    .replace(/[-:T.]/g, '')
+                    .slice(0, 17)}
+                  {item.serialNumber || item.period}
+                </td>
                 <td className="py-2 px-3 text-center">
                   <span className={`font-bold text-lg ${getNumberGradientClass(item.number)}`}>
                     {item.number}
@@ -145,7 +151,12 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
           <tbody>
             {currentItems.map((item) => (
               <tr key={item.id} className="border-b border-gray-700 hover:bg-[#33416d]">
-                <td className="py-2 px-4 font-mono text-xs md:text-sm">{item.period}</td>
+                <td className="py-2 px-4 font-mono text-sm md:text-base">
+                  {new Date().toISOString()
+                    .replace(/[-:T.]/g, '')
+                    .slice(0, 17)}
+                  {item.serialNumber || item.period}
+                </td>
                 <td className="py-2 px-4 text-center">
                   <span className={`font-bold text-lg md:text-xl ${getNumberGradientClass(item.number)}`}>
                     {item.number}

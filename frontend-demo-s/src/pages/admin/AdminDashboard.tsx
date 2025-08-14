@@ -45,6 +45,7 @@ const AdminDashboard = () => {
       try {
         const token = localStorage.getItem("adminToken");
         const res = await api.get("/admin/deposits", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('Fetched deposits:', res.data.deposits);
         setDeposits(res.data.deposits || []);
       } catch (err: any) {
         setError("Failed to load deposits");
@@ -55,13 +56,34 @@ const AdminDashboard = () => {
     fetchDeposits();
   }, []);
 
-  const handleAction = async (id: number, action: "verify" | "reject") => {
+  const handleAction = async (id: number, action: "approve" | "reject") => {
     try {
       const token = localStorage.getItem("adminToken");
-      await api.post(`/admin/deposits/${id}/${action}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setDeposits((prev: any[]) => prev.map((d: any) => d.id === id ? { ...d, status: action === "verify" ? "approved" : "rejected" } : d));
-    } catch {
-      alert("Action failed");
+      const endpoint = action === "approve" ? "verify" : "reject";
+      
+      // Use POST method and correct endpoint
+      await api.post(`/admin/deposits/${id}/${endpoint}`, {}, { 
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        } 
+      });
+      
+      // Update the UI optimistically
+      setDeposits((prev: any[]) => 
+        prev.map((d: any) => 
+          d.id === id ? { 
+            ...d, 
+            status: action === "approve" ? "approved" : "rejected" 
+          } : d
+        )
+      );
+      
+      alert(`Deposit request ${action}d successfully!`);
+    } catch (error: any) {
+      console.error(`Failed to ${action} deposit:`, error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Unknown error occurred';
+      alert(`Failed to ${action} deposit: ${errorMessage}`);
     }
   };
 
@@ -154,11 +176,14 @@ const AdminDashboard = () => {
                     <td className="py-2 px-2">{d.method}</td>
                     <td className="py-2 px-2">{getSlipUrl(d) ? <a href={getSlipUrl(d)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
                     <td className="py-2 px-2">{new Date(d.createdAt).toLocaleString()}</td>
-                    <td className="py-2 px-2 capitalize">{d.status}</td>
+                    <td className="py-2 px-2 capitalize">
+                      {d.status}
+                      {console.log('Deposit status:', d.id, d.status, 'Type:', typeof d.status, 'Lowercase:', String(d.status).toLowerCase())}
+                    </td>
                     <td className="py-2 px-2">
-                      {d.status === "pending" && (
+                      {(d.status && String(d.status).toLowerCase() === 'pending') && (
                         <>
-                          <button className="bg-green-600 text-white px-2 py-1 rounded mr-2 hover:bg-green-700" onClick={() => handleAction(d.id, "verify")}>Approve</button>
+                          <button className="bg-green-600 text-white px-2 py-1 rounded mr-2 hover:bg-green-700" onClick={() => handleAction(d.id, "approve")}>Approve</button>
                           <button className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700" onClick={() => handleAction(d.id, "reject")}>Reject</button>
                         </>
                       )}

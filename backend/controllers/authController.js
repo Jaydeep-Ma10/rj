@@ -144,10 +144,14 @@ export const login = async (req, res) => {
       return res.status(400).json({ 
         success: false,
         message: 'Validation failed',
-        errors: Object.entries(errors).reduce((acc, [field, error]) => ({
-          ...acc,
-          [field]: error.errors[0] // Get the first error message
-        }), {})
+        errors: Object.entries(errors).reduce((acc, [field, error]) => {
+          // Safely get the first error message
+          const errorMessage = error?.errors?.[0] || 'Invalid input';
+          return {
+            ...acc,
+            [field]: errorMessage
+          };
+        }, {})
       });
     }
     

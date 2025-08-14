@@ -40,8 +40,11 @@ const WingoGame = () => {
     period: string;
     betType: string;
     amount: number;
+    multiplier?: number;
     result?: "Win" | "Lose";
-    status?: string;
+    status?: 'pending' | 'settled';
+    resultNumber?: number;
+    createdAt?: string;
   }
   const [myHistoryData, setMyHistoryData] = useState<MyHistoryItem[]>(
     [] as MyHistoryItem[]
@@ -67,9 +70,16 @@ const WingoGame = () => {
   const [errorMyHistory, setErrorMyHistory] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch game history
+    // Fetch game history for the selected interval
     setLoadingHistory(true);
-    fetch("https://rj-755j.onrender.com/api/wingo/history")
+    const interval = selectedInterval
+      .replace("WinGo ", "")
+      .replace("sec", "s")
+      .replace("min", "m")
+      .replace(/\s/g, "")
+      .trim();
+    
+    fetch(`https://rj-755j.onrender.com/api/wingo/history?interval=${encodeURIComponent(interval)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch game history");
         const data = await res.json();
@@ -96,7 +106,7 @@ const WingoGame = () => {
         setErrorHistory(err.message || "Error fetching game history")
       )
       .finally(() => setLoadingHistory(false));
-  }, []);
+  }, [selectedInterval]); // Add selectedInterval to refresh history when interval changes
 
   // Fetch current round info from backend when interval changes
   useEffect(() => {
@@ -141,7 +151,6 @@ const WingoGame = () => {
           // Map status for badge: pending if result is null/undefined
           const mapped: MyHistoryItem[] = Array.isArray(data)
             ? data.map((item: any, i: number) => ({
-                ...item,
                 id:
                   item.betId !== undefined
                     ? String(item.betId)
@@ -156,15 +165,22 @@ const WingoGame = () => {
                     : item.period
                     ? String(item.period)
                     : String(i),
-                betType: item.betType || "",
+                betType: item.betType || item.type || "",
                 amount: typeof item.amount === "number" ? item.amount : 0,
-                status: item.status === "-" ? "pending" : "settled",
+                multiplier: typeof item.multiplier === "number" ? item.multiplier : undefined,
+                status: item.status === "-" || item.status === "pending" ? "pending" : "settled",
                 result:
-                  item.status === "Win"
+                  item.status === "Win" || item.result === "Win"
                     ? "Win"
-                    : item.status === "Lose"
+                    : (item.status === "Lose" || item.result === "Lose")
                     ? "Lose"
                     : undefined,
+                resultNumber: typeof item.resultNumber === "number" ? item.resultNumber : undefined,
+                createdAt: item.createdAt || item.timestamp || new Date().toISOString(),
+                // Include any other fields that might be needed
+                ...(item.type === 'color' && { betType: item.value }),
+                ...(item.type === 'number' && { betType: `Digit ${item.value}` }),
+                ...(item.type === 'bigSmall' && { betType: item.value.toUpperCase() })
               }))
             : ([] as MyHistoryItem[]);
           setMyHistoryData(mapped);

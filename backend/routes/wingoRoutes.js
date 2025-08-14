@@ -1,12 +1,17 @@
 import express from 'express';
 import * as wingoController from '../controllers/wingoController.js';
+import idempotency from '../middleware/idempotency.js';
+import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/bet', wingoController.placeBet);
+// Protected routes with authentication and idempotency
+router.post('/bet', auth, idempotency, wingoController.placeBet);
+router.post('/round/settle', auth, wingoController.settleRound);
+
+// Public routes
 router.get('/round/current', wingoController.getCurrentRound);
-router.post('/round/settle', wingoController.settleRound);
 router.get('/history', wingoController.getGameHistory);
-router.get('/my-bets', wingoController.getMyBets);
+router.get('/my-bets', auth, wingoController.getMyBets);
 
 export default router;
