@@ -3,11 +3,15 @@ import { createContext, useContext, useEffect, useState } from "react";
 import api from "../utils/api";
 
 interface User {
-  id?: string;
+  id: string | number;
+  uid: string | number;
   name: string;
-  mobile?: string;
+  mobile: string;
   referralCode: string;
+  balance?: number;
   avatarUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextType {
@@ -28,22 +32,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isMockAuth, setIsMockAuth] = useState<boolean>(false); // 🧪 TEMPORARY: Track mock auth state
 
-  // 🧪 TEMPORARY: Mock user for UI testing (remove in production)
-  
-  const mockUser: User = {
-    id: "1",
-    name: "TestUser",
-    mobile: "+1234567890", 
-    referralCode: "TEST123",
-    avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg"
-  };
-  
   const mockToken = "mock-jwt-token-for-testing";
 
   useEffect(() => {
-    // 🧪 TEMPORARY: Auto-login with mock user for UI testing
+    // 🧪 TEMPORARY: Mock auth functionality (disabled in production)
     if (isMockAuth) {
       console.log("🧪 MOCK AUTH ENABLED - Using test user for UI testing");
+      // Create a properly typed mock user object
+      const mockUser: User = {
+        id: "1",
+        uid: "1",
+        name: "TestUser",
+        mobile: "+1234567890",
+        referralCode: "TEST123",
+        balance: 1000,
+        avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
       setUser(mockUser);
       setToken(mockToken);
       return;
@@ -59,7 +65,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isMockAuth]);
 
-  const login = (user: User, token: string) => {
+  const login = (userData: any, token: string) => {
+    // Ensure all required fields are present and properly typed
+    const user: User = {
+      id: userData.id || userData.uid,
+      uid: userData.uid || userData.id,
+      name: userData.name,
+      mobile: userData.mobile,
+      referralCode: userData.referralCode || '',
+      balance: userData.balance || 0,
+      avatarUrl: userData.avatarUrl,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt
+    };
+    
     setUser(user);
     setToken(token);
     localStorage.setItem("auth", JSON.stringify({ user, token }));

@@ -14,35 +14,56 @@ const Account = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user?.name) return;
+    // Use mobile if available, otherwise fall back to user ID
+    const userIdentifier = user?.mobile || user?.id;
+    if (!userIdentifier) return;
+    
     setLoading(true);
     setError(null);
+    
+    // Determine if we're using mobile or ID for the API call
+    const isMobile = !!user?.mobile;
+    const endpointPrefix = isMobile ? '/user' : '/user/id';
+    
     // Fetch balance
     fetch(
-      `https://rj-755j.onrender.com/api/user/${encodeURIComponent(
-        user.name
+      `https://rj-755j.onrender.com/api${endpointPrefix}/${encodeURIComponent(
+        userIdentifier
       )}/balance`
     )
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch balance");
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || "Failed to fetch balance");
+        }
         const data = await res.json();
         setBalance(data.balance);
       })
-      .catch((err) => setError(err.message || "Error fetching balance"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error('Balance fetch error:', err);
+        setError(err.message || "Error fetching balance");
+      });
+      
     // Fetch profile (id, lastLogin, etc)
     fetch(
-      `https://rj-755j.onrender.com/api/user/${encodeURIComponent(
-        user.name
+      `https://rj-755j.onrender.com/api${endpointPrefix}/${encodeURIComponent(
+        userIdentifier
       )}/profile`
     )
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch profile");
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || "Failed to fetch profile");
+        }
         const data = await res.json();
-        setProfile(data.user);
+        setProfile(data.user || data); // Handle different response formats
       })
-      .catch(() => {});
-  }, [user?.name]);
+      .catch((err) => {
+        console.error('Profile fetch error:', err);
+        setError(prev => prev || err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [user?.mobile, user?.id]);
 
   return (
     <div className="max-w-2xl mx-auto">
