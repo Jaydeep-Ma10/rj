@@ -8,8 +8,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { execSync } from 'child_process';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from './prisma.js';
 import { isUsingS3 } from './services/s3TransactionSlipService.js';
 
 // Load environment variables first
@@ -338,6 +337,51 @@ async function startApp() {
 }
 
 startApp();
+
+// Add graceful shutdown handlers
+const gracefulShutdown = async () => {
+  console.log('Shutting down gracefully...');
+  try {
+    await prisma.$disconnect();
+    console.log('Prisma client disconnected');
+  } catch (error) {
+    console.error('Error during Prisma disconnection:', error);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  gracefulShutdown();
+});
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      error: error.message,
+      database: 'disconnected'
+    });
+  }
+});
 
 // Only call listen ONCE, here:
 httpServer.listen(PORT, () => {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../../hooks/useAuth";
+import api from "../../../utils/api";
 
 interface BetModalProps {
   isOpen: boolean;
@@ -201,18 +202,7 @@ const BetModal: React.FC<BetModalProps> = ({
                   amount: amount * quantity,
                   multiplier,
                 };
-                const res = await fetch(
-                  "https://rj-755j.onrender.com/api/wingo/bet",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                  }
-                );
-                if (!res.ok) {
-                  const err = await res.json();
-                  throw new Error(err.error || "Failed to place bet");
-                }
+                await api.post("/wingo/bet", payload);
                 if (onSuccess) onSuccess();
                 onClose();
               } catch (e: any) {

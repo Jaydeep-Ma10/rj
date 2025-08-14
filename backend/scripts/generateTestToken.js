@@ -35,8 +35,10 @@ async function generateTestToken() {
     console.log('Username: FileUploadUser');
     console.log('Password: Upload@123');
     console.log('\n🔑 JWT Token (use this in the test form):');
+    console.log('\n--- START TOKEN ---');
     console.log(token);
-    console.log('\n📝 Copy the token above and paste it when prompted in the test form.');
+    console.log('--- END TOKEN ---\n');
+    console.log('📝 Copy the token between the markers and paste it when prompted in the test form.');
 
   } catch (error) {
     console.error('❌ Error generating test token:', error);

@@ -101,7 +101,15 @@ export const signup = async (req, res) => {
           referredBy,
         },
       });
-      const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
+      const tokenPayload = { 
+        userId: user.id, 
+        mobile: user.mobile,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+      };
+      console.log('Signing token with payload:', JSON.stringify(tokenPayload, null, 2));
+      console.log('Using JWT_SECRET length:', JWT_SECRET?.length || 0);
+      const token = jwt.sign(tokenPayload, JWT_SECRET);
       return res.status(201).json({ 
         token, 
         user: { 

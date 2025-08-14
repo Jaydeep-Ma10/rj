@@ -16,6 +16,7 @@ import MyHistoryTable from "./components/MyHistoryTable";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect } from "react";
 import { getSocket } from "../../utils/socket";
+import api from "../../utils/api";
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -141,54 +142,53 @@ const WingoGame = () => {
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
-    const fetchMyBets = () => {
+    const fetchMyBets = async () => {
       if (!user?.id) return;
       setLoadingMyHistory(true);
-      fetch(`https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`)
-        .then(async (res) => {
-          if (!res.ok) throw new Error("Failed to fetch my bet history");
-          const data = await res.json();
-          // Map status for badge: pending if result is null/undefined
-          const mapped: MyHistoryItem[] = Array.isArray(data)
-            ? data.map((item: any, i: number) => ({
-                id:
-                  item.betId !== undefined
-                    ? String(item.betId)
-                    : item.interval && item.serialNumber
-                    ? `${item.interval}-${item.serialNumber}`
-                    : item.period !== undefined
-                    ? String(item.period)
-                    : String(i),
-                period:
-                  item.interval && item.serialNumber
-                    ? `${item.interval}-${item.serialNumber}`
-                    : item.period
-                    ? String(item.period)
-                    : String(i),
-                betType: item.betType || item.type || "",
-                amount: typeof item.amount === "number" ? item.amount : 0,
-                multiplier: typeof item.multiplier === "number" ? item.multiplier : undefined,
-                status: item.status === "-" || item.status === "pending" ? "pending" : "settled",
-                result:
-                  item.status === "Win" || item.result === "Win"
-                    ? "Win"
-                    : (item.status === "Lose" || item.result === "Lose")
-                    ? "Lose"
-                    : undefined,
-                resultNumber: typeof item.resultNumber === "number" ? item.resultNumber : undefined,
-                createdAt: item.createdAt || item.timestamp || new Date().toISOString(),
-                // Include any other fields that might be needed
-                ...(item.type === 'color' && { betType: item.value }),
-                ...(item.type === 'number' && { betType: `Digit ${item.value}` }),
-                ...(item.type === 'bigSmall' && { betType: item.value.toUpperCase() })
-              }))
-            : ([] as MyHistoryItem[]);
-          setMyHistoryData(mapped);
-        })
-        .catch((err) =>
-          setErrorMyHistory(err.message || "Error fetching my bet history")
-        )
-        .finally(() => setLoadingMyHistory(false));
+      try {
+        const response = await api.get(`/wingo/my-bets?userId=${user.id}`);
+        const data = response.data;
+        // Map status for badge: pending if result is null/undefined
+        const mapped: MyHistoryItem[] = Array.isArray(data)
+          ? data.map((item: any, i: number) => ({
+              id:
+                item.betId !== undefined
+                  ? String(item.betId)
+                  : item.interval && item.serialNumber
+                  ? `${item.interval}-${item.serialNumber}`
+                  : item.period !== undefined
+                  ? String(item.period)
+                  : String(i),
+              period:
+                item.interval && item.serialNumber
+                  ? `${item.interval}-${item.serialNumber}`
+                  : item.period
+                  ? String(item.period)
+                  : String(i),
+              betType: item.betType || item.type || "",
+              amount: typeof item.amount === "number" ? item.amount : 0,
+              multiplier: typeof item.multiplier === "number" ? item.multiplier : undefined,
+              status: item.status === "-" || item.status === "pending" ? "pending" : "settled",
+              result:
+                item.status === "Win" || item.result === "Win"
+                  ? "Win"
+                  : (item.status === "Lose" || item.result === "Lose")
+                  ? "Lose"
+                  : undefined,
+              resultNumber: typeof item.resultNumber === "number" ? item.resultNumber : undefined,
+              createdAt: item.createdAt || item.timestamp || new Date().toISOString(),
+              ...(item.type === 'color' && { betType: item.value }),
+              ...(item.type === 'number' && { betType: `Digit ${item.value}` }),
+              ...(item.type === 'bigSmall' && { betType: item.value.toUpperCase() })
+            }))
+          : ([] as MyHistoryItem[]);
+        setMyHistoryData(mapped);
+      } catch (err: any) {
+        setErrorMyHistory(err.response?.data?.error || err.message || "Error fetching my bet history");
+        console.error('Error fetching bet history:', err);
+      } finally {
+        setLoadingMyHistory(false);
+      }
     };
     fetchMyBets();
     if (user?.id) {

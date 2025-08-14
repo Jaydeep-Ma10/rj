@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from '../prisma.js';
 
 // Helper: pick a winning number for user bet
 function pickWinningNumberForBet(bet) {
@@ -561,50 +560,111 @@ export const getGameHistory = async (req, res) => {
 // GET /wingo/my-bets?userId=xxx
 export const getMyBets = async (req, res) => {
   try {
+    console.log('getMyBets called with query:', req.query);
     const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
+    
+    if (!userId) {
+      console.log('Missing userId in query');
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    // Parse userId to integer safely
+    const parsedUserId = parseInt(userId, 10);
+    if (isNaN(parsedUserId)) {
+      console.log('Invalid userId format:', userId);
+      return res.status(400).json({ error: "Invalid userId format" });
+    }
+
+    console.log('Fetching bets for userId:', parsedUserId);
+    
     const bets = await prisma.wingoBet.findMany({
-      where: { userId: parseInt(userId) },
+      where: { userId: parsedUserId },
       orderBy: { createdAt: "desc" },
       take: 50,
-      include: { round: true, user: true }
+      include: { 
+        round: true, 
+        user: {
+          select: {
+            id: true,
+            name: true,
+            mobile: true
+          }
+        } 
+      }
     });
+
+    console.log(`Found ${bets.length} bets for user ${parsedUserId}`);
+    
     // Add full info for frontend
     const withExtras = bets.map(bet => {
-      let resultBigSmall = null, resultColor = null;
-      const n = bet.round?.resultNumber;
-      if (typeof n === 'number') {
-        if ([5,6,7,8,9].includes(n)) resultBigSmall = 'Big';
-        else if ([0,1,2,3,4].includes(n)) resultBigSmall = 'Small';
-        if ([1,3,7,9].includes(n)) resultColor = 'green';
-        else if ([2,4,6,8,9].includes(n)) resultColor = 'red';
-        else if ([0,5].includes(n)) resultColor = 'violet';
+      try {
+        let resultBigSmall = null, resultColor = null;
+        const n = bet.round?.resultNumber;
+        
+        if (typeof n === 'number') {
+          if ([5,6,7,8,9].includes(n)) resultBigSmall = 'Big';
+          else if ([0,1,2,3,4].includes(n)) resultBigSmall = 'Small';
+          
+          if ([1,3,7,9].includes(n)) resultColor = 'green';
+          else if ([2,4,6,8,9].includes(n)) resultColor = 'red';
+          else if ([0,5].includes(n)) resultColor = 'violet';
+        }
+        
+        let status = '-';
+        if (bet.win === true) status = 'Win';
+        else if (bet.win === false) status = 'Lose';
+        
+        const result = {
+          betId: bet.id,
+          userId: bet.userId,
+          userName: bet.user?.name || 'Unknown',
+          period: bet.round?.period || null,
+          interval: bet.round?.interval || null,
+          serialNumber: bet.round?.serialNumber || null,
+          betType: bet.type,
+          betValue: bet.value,
+          amount: bet.amount,
+          multiplier: bet.multiplier || 1,
+          createdAt: bet.createdAt,
+          status,
+          resultNumber: n !== undefined ? n : null,
+          resultBigSmall,
+          resultColor,
+          win: bet.win,
+          payout: bet.payout || 0
+        };
+        
+        return result;
+      } catch (mapError) {
+        console.error('Error mapping bet:', mapError);
+        console.error('Problematic bet data:', JSON.stringify(bet, null, 2));
+        return null;
       }
-      let status = '-';
-      if (bet.win === true) status = 'Win';
-      else if (bet.win === false) status = 'Lose';
-      return {
-        betId: bet.id,
-        userId: bet.userId,
-        userName: bet.user?.name,
-        period: bet.round?.period,
-        interval: bet.round?.interval,
-        serialNumber: bet.round?.serialNumber,
-        betType: bet.type,
-        betValue: bet.value,
-        amount: bet.amount,
-        multiplier: bet.multiplier,
-        createdAt: bet.createdAt,
-        status,
-        resultNumber: n,
-        resultBigSmall,
-        resultColor,
-        win: bet.win,
-        payout: bet.payout
-      };
-    });
+    }).filter(Boolean); // Remove any null entries from mapping errors
+
+    console.log('Returning bets data');
     res.json(withExtras);
   } catch (e) {
-    res.status(500).json({ error: "Something went wrong" });
+    console.error('Error in getMyBets:', e);
+    
+    // Check for common database errors
+    let errorMessage = "Failed to fetch user bets";
+    let statusCode = 500;
+    
+    if (e.code === 'P1001' || e.code === 'P1017') {
+      // Database connection errors
+      errorMessage = "Database connection error. Please try again later.";
+      statusCode = 503; // Service Unavailable
+    } else if (e.code === 'P2025') {
+      // Record not found
+      errorMessage = "User not found";
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? e.message : undefined,
+      code: e.code
+    });
   }
 };
