@@ -281,7 +281,7 @@ async function setupRoutes() {
     { path: '/api', module: './routes/authRoutes.js' },
     { path: '/api/password-reset', module: './routes/passwordResetRoutes.js' },
     { path: '/api', module: './routes/manualWithdrawRoutes.js' },
-    { path: '/api', module: './routes/wingoRoutes.js' },
+    { path: '/api/wingo', module: './routes/wingoRoutes.js' },
     { path: '/api/files', module: './routes/fileUpload.js' },
     { path: '/admin', module: './routes/adminAuthRoutes.js' }
   ];
