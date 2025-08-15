@@ -1,9 +1,9 @@
 // src/pages/Deposit.tsx
-import type { FormEvent } from "react";
-import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
 import { ArrowLeft } from "lucide-react";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { buildApiUrl, API_ENDPOINTS } from "../config/api";
 
 // Define types for the methods
 interface PaymentMethod {
@@ -98,7 +98,7 @@ const Deposit = () => {
       }
 
       const response = await fetch(
-        "https://rj-755j.onrender.com/api/manual-deposit",
+        buildApiUrl(API_ENDPOINTS.MANUAL_DEPOSIT),
         {
           method: "POST",
           body: formData,

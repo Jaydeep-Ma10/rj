@@ -1,8 +1,9 @@
 // src/utils/api.ts
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 const api = axios.create({
-  baseURL: 'https://rj-755j.onrender.com/api', // Updated to use deployed backend
+  baseURL: `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}`,
 });
 
 // Add a request interceptor to include the auth token with each request

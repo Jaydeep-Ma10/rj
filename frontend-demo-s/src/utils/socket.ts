@@ -1,7 +1,8 @@
 // src/utils/socket.ts
 import { io as clientIo, Socket } from 'socket.io-client';
+import { API_CONFIG } from '../config/api';
 
-const URL = 'https://rj-755j.onrender.com';
+const URL = API_CONFIG.SOCKET_URL;
 
 let socket: Socket | null = null;
 

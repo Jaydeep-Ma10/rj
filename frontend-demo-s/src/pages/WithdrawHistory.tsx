@@ -1,5 +1,6 @@
-import { useAuth } from "../hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from '../hooks/useAuth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const WithdrawHistory = () => {
   const { user } = useAuth();
@@ -11,7 +12,7 @@ const WithdrawHistory = () => {
     if (!user?.name) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/withdrawals`)
+    fetch(buildApiUrl(API_ENDPOINTS.USER_WITHDRAWALS(user.name)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch withdrawal history");
         const data = await res.json();

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "../components/ui/Button";
-import { MdRefresh } from "react-icons/md";
-import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { getSocket } from '../../../utils/socket';
+import { useAuth } from "../../../hooks/useAuth";
+import { getSocket } from "../../../utils/socket";
+import { buildApiUrl, API_ENDPOINTS } from "../../../config/api";
+import { MdRefresh } from "react-icons/md";
 import { IoWalletSharp } from "react-icons/io5";
 
 const WalletCard: React.FC = () => {
@@ -19,7 +20,7 @@ const WalletCard: React.FC = () => {
     if (!userIdNum) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/id/${userIdNum}/balance`)
+    fetch(buildApiUrl(API_ENDPOINTS.USER_BALANCE_BY_ID(userIdNum)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch balance");
         const data = await res.json();

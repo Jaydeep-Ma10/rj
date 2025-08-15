@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 interface Transaction {
   id: number;
@@ -21,8 +22,8 @@ const AllTransactions: React.FC = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/deposits`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/withdrawals`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
+      fetch(buildApiUrl(API_ENDPOINTS.USER_DEPOSITS(user.name))).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
+      fetch(buildApiUrl(API_ENDPOINTS.USER_WITHDRAWALS(user.name))).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
     ])
       .then(([depositData, withdrawalData]) => {
         const deposits: Transaction[] = (depositData.deposits || []).map((d: any) => ({

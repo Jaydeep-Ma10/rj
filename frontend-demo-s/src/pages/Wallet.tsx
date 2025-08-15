@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-
-import { useAuth } from "../hooks/useAuth";
-import { useEffect, useState } from "react";
-import { getSocket } from "../utils/socket";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { getSocket } from "../utils/socket";
+import { buildApiUrl, API_ENDPOINTS } from "../config/api";
 import { IoWalletSharp } from "react-icons/io5";
+import { ArrowLeft } from "lucide-react";
 import {
   depositeButton,
   depositeHistoryButton,
@@ -26,7 +26,7 @@ const Wallet = () => {
     if (!userIdNum) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/id/${userIdNum}/balance`)
+    fetch(buildApiUrl(API_ENDPOINTS.USER_BALANCE_BY_ID(userIdNum)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch balance");
         const data = await res.json();

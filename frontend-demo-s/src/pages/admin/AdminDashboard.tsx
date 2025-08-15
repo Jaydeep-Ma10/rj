@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import api from "../../utils/api";
+import api from '../../utils/api';
+import { buildAssetUrl } from '../../config/api';
 import AdminWithdrawals from "./AdminWithdrawals";
 
 const AdminDashboard = () => {
@@ -25,7 +26,7 @@ const AdminDashboard = () => {
       }
       
       // Otherwise, it's a relative URL, prepend the base URL
-      return `https://rj-755j.onrender.com${deposit.slipUrl}`;
+      return buildAssetUrl(deposit.slipUrl);
     }
     
     return null;

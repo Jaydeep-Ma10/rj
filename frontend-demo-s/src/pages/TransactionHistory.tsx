@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 interface Props {
   name?: string;
@@ -23,8 +24,8 @@ const TransactionHistory: React.FC<Props> = ({ name }) => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(name)}/deposits`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
-      fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(name)}/withdrawals`).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
+      fetch(buildApiUrl(API_ENDPOINTS.USER_DEPOSITS(name))).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch deposits")),
+      fetch(buildApiUrl(API_ENDPOINTS.USER_WITHDRAWALS(name))).then(res => res.ok ? res.json() : Promise.reject("Failed to fetch withdrawals")),
     ])
       .then(([depositData, withdrawalData]) => {
         const deposits: Transaction[] = (depositData.deposits || []).map((d: any) => ({

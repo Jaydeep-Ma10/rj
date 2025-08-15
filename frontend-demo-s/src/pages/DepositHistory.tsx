@@ -1,6 +1,6 @@
-
-import { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useState, useEffect } from "react";
+import { useAuth } from '../hooks/useAuth';
+import { buildApiUrl, buildAssetUrl, API_ENDPOINTS } from '../config/api';
 
 interface Deposit {
   id: number;
@@ -22,7 +22,7 @@ const DepositHistory = () => {
     if (!user?.name) return;
     setLoading(true);
     setError(null);
-    fetch(`https://rj-755j.onrender.com/api/user/${encodeURIComponent(user.name)}/deposits`)
+    fetch(buildApiUrl(API_ENDPOINTS.USER_DEPOSITS(user.name)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch deposit history");
         const data = await res.json();
@@ -73,8 +73,8 @@ const DepositHistory = () => {
                     <td className="py-2 px-3">{d.method || "-"}</td>
                     <td className="py-2 px-3">
                       {d.slipUrl ? (
-                        <a href={`https://rj-755j.onrender.com${d.slipUrl}`} target="_blank" rel="noopener noreferrer">
-                          <img src={`https://rj-755j.onrender.com${d.slipUrl}`} alt="slip" className="h-10 rounded shadow" />
+                        <a href={buildAssetUrl(d.slipUrl)} target="_blank" rel="noopener noreferrer">
+                          <img src={buildAssetUrl(d.slipUrl)} alt="slip" className="h-10 rounded shadow" />
                         </a>
                       ) : (
                         <span className="text-gray-400">-</span>

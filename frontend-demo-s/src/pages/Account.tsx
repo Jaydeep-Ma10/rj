@@ -1,9 +1,10 @@
-import { useAuth } from "../hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 import { depositeButton, withdrawButton } from "@/assets/images";
 import { MdRefresh } from "react-icons/md";
 import { FaPowerOff } from "react-icons/fa6";
-import { useNavigate } from "react-router-dom";
 
 const Account = () => {
   const { user, logout } = useAuth();
@@ -23,13 +24,10 @@ const Account = () => {
     
     // Determine if we're using mobile or ID for the API call
     const isMobile = !!user?.mobile;
-    const endpointPrefix = isMobile ? '/user' : '/user/id';
     
     // Fetch balance
     fetch(
-      `https://rj-755j.onrender.com/api${endpointPrefix}/${encodeURIComponent(
-        userIdentifier
-      )}/balance`
+      buildApiUrl(isMobile ? API_ENDPOINTS.USER_BALANCE_BY_NAME(String(userIdentifier)) : API_ENDPOINTS.USER_BALANCE_BY_ID(Number(userIdentifier)))
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -46,9 +44,7 @@ const Account = () => {
       
     // Fetch profile (id, lastLogin, etc)
     fetch(
-      `https://rj-755j.onrender.com/api${endpointPrefix}/${encodeURIComponent(
-        userIdentifier
-      )}/profile`
+      buildApiUrl(isMobile ? API_ENDPOINTS.USER_PROFILE_BY_NAME(String(userIdentifier)) : API_ENDPOINTS.USER_PROFILE_BY_ID(Number(userIdentifier)))
     )
       .then(async (res) => {
         if (!res.ok) {

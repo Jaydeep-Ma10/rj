@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { ArrowLeft } from "lucide-react";
+import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 
 const Withdraw = () => {
@@ -24,7 +25,7 @@ const Withdraw = () => {
     setSubmitStatus(null);
     setSubmitting(true);
     try {
-      const res = await fetch("https://rj-755j.onrender.com/api/manual-withdraw", {
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.MANUAL_WITHDRAW), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
