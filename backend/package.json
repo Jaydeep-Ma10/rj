@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "nodemon --watch . --ext js --exec node --experimental-json-modules server.js",
     "build": "npm install && npx prisma generate && npx prisma migrate deploy",
+    "fix:status-column": "node scripts/fix-status-column.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy",
