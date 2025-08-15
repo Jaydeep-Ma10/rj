@@ -12,6 +12,10 @@ import DigitGrid from "./components/DigitGrid";
 import MultiplierGrid from "./components/MultiplierGrid";
 import BigSmallButtons from "./components/BigSmallButtons";
 import GameChart from "./components/GameChart";
+import HeaderBar from "./components/HeaderBar";
+import TimeSelector from "./components/TimeSelector";
+import AdBanner from "./components/AdBanner";
+import GameHeaderCard from "./components/GameHeaderCard";
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -38,7 +42,7 @@ const WingoGame = () => {
     amount: number;
     multiplier?: number;
     result?: "Win" | "Lose";
-    status?: 'pending' | 'settled';
+    status?: "pending" | "settled";
     resultNumber?: number;
     createdAt?: string;
   }
@@ -74,7 +78,7 @@ const WingoGame = () => {
       .replace("min", "m")
       .replace(/\s/g, "")
       .trim();
-    
+
     fetch(buildApiUrl(API_ENDPOINTS.WINGO_HISTORY(interval)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch game history");
@@ -109,7 +113,7 @@ const WingoGame = () => {
     let intervalLabel = selectedInterval
       .replace("WinGo ", "")
       .replace("sec", "s")
-      .replace("min", "m")  // Fixed: lowercase "min" not "Min"
+      .replace("min", "m") // Fixed: lowercase "min" not "Min"
       .replace(/\s/g, "") // Remove all spaces
       .trim();
     setRoundLoading(true);
@@ -158,25 +162,41 @@ const WingoGame = () => {
                   : String(i),
               betType: item.betType || item.type || "",
               amount: typeof item.amount === "number" ? item.amount : 0,
-              multiplier: typeof item.multiplier === "number" ? item.multiplier : undefined,
-              status: item.status === "-" || item.status === "pending" ? "pending" : "settled",
+              multiplier:
+                typeof item.multiplier === "number"
+                  ? item.multiplier
+                  : undefined,
+              status:
+                item.status === "-" || item.status === "pending"
+                  ? "pending"
+                  : "settled",
               result:
                 item.status === "Win" || item.result === "Win"
                   ? "Win"
-                  : (item.status === "Lose" || item.result === "Lose")
+                  : item.status === "Lose" || item.result === "Lose"
                   ? "Lose"
                   : undefined,
-              resultNumber: typeof item.resultNumber === "number" ? item.resultNumber : undefined,
-              createdAt: item.createdAt || item.timestamp || new Date().toISOString(),
-              ...(item.type === 'color' && { betType: item.value }),
-              ...(item.type === 'number' && { betType: `Digit ${item.value}` }),
-              ...(item.type === 'bigSmall' && { betType: item.value.toUpperCase() })
+              resultNumber:
+                typeof item.resultNumber === "number"
+                  ? item.resultNumber
+                  : undefined,
+              createdAt:
+                item.createdAt || item.timestamp || new Date().toISOString(),
+              ...(item.type === "color" && { betType: item.value }),
+              ...(item.type === "number" && { betType: `Digit ${item.value}` }),
+              ...(item.type === "bigSmall" && {
+                betType: item.value.toUpperCase(),
+              }),
             }))
           : ([] as MyHistoryItem[]);
         setMyHistoryData(mapped);
       } catch (err: any) {
-        setErrorMyHistory(err.response?.data?.error || err.message || "Error fetching my bet history");
-        console.error('Error fetching bet history:', err);
+        setErrorMyHistory(
+          err.response?.data?.error ||
+            err.message ||
+            "Error fetching my bet history"
+        );
+        console.error("Error fetching bet history:", err);
       } finally {
         setLoadingMyHistory(false);
       }
@@ -209,44 +229,24 @@ const WingoGame = () => {
   return (
     <div className="min-h-screen sm:p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4 lg:space-y-6 w-[100vw]">
       <div className="px-[13px] bg-[#2B3270] rounded-b-[6rem] mb-5">
+        <HeaderBar />
         <WalletCard />
-        <div className="flex justify-center items-center gap-2 py-4">
-          {["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min", "WinGo 10min"].map((interval) => (
-            <button
-              key={interval}
-              onClick={() => setSelectedInterval(interval)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedInterval === interval
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-600 text-gray-300 hover:bg-gray-500"
-              }`}
-            >
-              {interval.replace("WinGo ", "")}
-            </button>
-          ))}
-        </div>
+        <AdBanner />
+        <TimeSelector
+          selected={selectedInterval || "30sec"}
+          onSelect={(label) => setSelectedInterval(label)}
+        />
       </div>
 
-      <div className="bg-[#2B3270] mx-[13px] p-4 rounded-xl shadow-md">
-        <div className="text-center text-white">
-          <h3 className="text-lg font-bold mb-2">{selectedInterval}</h3>
-          <div className="flex justify-center items-center gap-2 mb-4">
-            {gameHistoryData.slice(0, 5).map((item: any, index) => (
-              <div key={index} className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {item.number}
-              </div>
-            ))}
-          </div>
-          {roundLoading && <p className="text-gray-400">Loading round...</p>}
-          {roundError && <p className="text-red-400">{roundError}</p>}
-          {timerPeriod && (
-            <div className="text-2xl font-bold text-green-400">
-              {Math.floor(timerDuration / 60)}:{(timerDuration % 60).toString().padStart(2, '0')}
-            </div>
-          )}
-        </div>
-      </div>
-        <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
+      <GameHeaderCard
+        selectedInterval={selectedInterval}
+        results={gameHistoryData.slice(0, 5).map((item: any) => item.number)}
+        timePeriod={timerPeriod}
+        duration={timerDuration}
+        roundLoading={roundLoading}
+        roundError={roundError}
+      />
+      <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
         <BetOptions onSelect={(color) => handleOpenBet(color)} />
         <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
         <MultiplierGrid
@@ -257,11 +257,11 @@ const WingoGame = () => {
               console.log("Multiplier selected:", value); // or use it for other logic
             }
           }}
-          />
+        />
         <BigSmallButtons
           onSelect={(value) => handleOpenBet(value.toUpperCase())}
-          />
-          </div>
+        />
+      </div>
       {/* <div className="flex justify-center items-center flex-col bg-[#2B3270] px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full">
 
       </div> */}
@@ -435,5 +435,3 @@ const WingoGame = () => {
 };
 
 export default WingoGame;
-
-

@@ -1,8 +1,8 @@
-// src/games/wingo/components/TimeSelector.tsx
 import React from "react";
 import { clock, nonClock } from "@/assets/images";
 
-const timeOptions = ["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min"];
+
+const timeOptions = ["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min", "WinGo 10min"];
 
 interface Props {
   selected: string;
@@ -26,7 +26,7 @@ const TimeSelector: React.FC<Props> = ({ selected, onSelect }) => {
         >
           <img src={selected === label ? clock : nonClock} className="w-10 h-10" />
           <span className="text-xs font-Bold leading-tight w-10">
-          {label}
+          {label.replace("WinGo ", "")}
           </span>
         </div>
       ))}
