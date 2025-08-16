@@ -8,7 +8,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { execSync } from 'child_process';
-import prisma from './prisma.js';
+import { prisma } from './prisma/client.js';
 import { isUsingS3 } from './services/s3TransactionSlipService.js';
 
 // Load environment variables first
@@ -144,6 +144,9 @@ const io = new SocketIOServer(httpServer, {
   pingInterval: 25000,
   cookie: false
 });
+
+// Make io globally available for round manager
+global.io = io;
 
 // Ensure uploads directory exists
 function ensureUploadsDir() {

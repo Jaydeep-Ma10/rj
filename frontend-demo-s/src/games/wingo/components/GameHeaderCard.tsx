@@ -46,9 +46,12 @@ const GameHeaderCard: React.FC<Props> = ({
               </div>
             ) : roundError ? (
               <div className="p-2 md:p-3 rounded-lg w-full md:w-1/2 text-center flex items-center justify-center min-h-[70px] md:min-h-[90px]">
-                <span className="text-red-400 font-bold text-sm md:text-base">
-                  {roundError}
-                </span>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400"></div>
+                  <span className="text-yellow-400 font-bold text-sm md:text-base">
+                    {roundError}
+                  </span>
+                </div>
               </div>
             ) : (
               <CountdownTimer duration={duration} timePeriod={timePeriod} />

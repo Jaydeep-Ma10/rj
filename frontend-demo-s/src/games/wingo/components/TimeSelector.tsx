@@ -2,7 +2,7 @@ import React from "react";
 import { clock, nonClock } from "@/assets/images";
 
 
-const timeOptions = ["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min", "WinGo 10min"];
+const timeOptions = ["WinGo 30sec", "WinGo 1min", "WinGo 3min", "WinGo 5min"];
 
 interface Props {
   selected: string;

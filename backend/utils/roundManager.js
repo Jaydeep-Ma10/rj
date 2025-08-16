@@ -181,7 +181,18 @@ async function createNextRound(label, durationMs) {
       }
     });
     
-    console.log(`[${now.toLocaleTimeString()}] Created round for ${label} period ${nextPeriod} (serial ${nextSerial})`);
+    console.log(`✅ Created ${label} round: ${nextPeriod} (${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()})`);
+    
+    // Emit Socket.IO event for new round creation
+    if (global.io) {
+      global.io.emit('round:created', {
+        interval: label,
+        round: newRound,
+        timeRemaining: Math.floor((endTime.getTime() - Date.now()) / 1000)
+      });
+      console.log(`📡 Emitted round:created for ${label}`);
+    }
+    
     return newRound;
   });
 }
@@ -318,7 +329,7 @@ export async function settleExpiredRounds() {
           
           await prisma.wingoBet.update({ 
             where: { id: bet.id }, 
-            data: { win, payout } 
+            data: { win, payout, status: 'settled' } 
           });
         }
 

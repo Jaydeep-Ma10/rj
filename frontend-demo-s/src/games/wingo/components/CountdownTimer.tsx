@@ -8,12 +8,24 @@ interface Props {
 const CountdownTimer: React.FC<Props> = ({ duration, timePeriod }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
 
+  // Update timeLeft when duration prop changes (new round)
+  useEffect(() => {
+    setTimeLeft(duration);
+  }, [duration]);
+
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : duration));
+      setTimeLeft((prev) => {
+        if (prev > 0) {
+          return prev - 1;
+        } else {
+          // Timer stays at 0, Socket.IO will handle new rounds
+          return 0;
+        }
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [duration]);
+  }, []);
 
   const formatTime = (sec: number) =>
     `${Math.floor(sec / 60)

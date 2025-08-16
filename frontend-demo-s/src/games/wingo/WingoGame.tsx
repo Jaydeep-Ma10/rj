@@ -1,22 +1,21 @@
-import { useState } from "react";
-import HeaderBar from "./components/HeaderBar";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { getSocket } from "../../utils/socket";
+import { buildApiUrl, API_ENDPOINTS } from "../../config/api";
+import api from "../../utils/api";
 import WalletCard from "./components/WalletCard";
-import AdBanner from "./components/AdBanner";
-import TimeSelector from "./components/TimeSelector";
-import GameHeaderCard from "./components/GameHeaderCard";
+import BetModal from "./components/BetModal";
+import GameHistoryTable from "./components/GameHistoryTable";
+import MyHistoryTable from "./components/MyHistoryTable";
 import BetOptions from "./components/BetOptions";
 import DigitGrid from "./components/DigitGrid";
 import MultiplierGrid from "./components/MultiplierGrid";
 import BigSmallButtons from "./components/BigSmallButtons";
-import BetModal from "./components/BetModal";
-import GameHistoryTable from "./components/GameHistoryTable";
 import GameChart from "./components/GameChart";
-import MyHistoryTable from "./components/MyHistoryTable";
-
-import { useAuth } from "../../hooks/useAuth";
-import { useEffect } from "react";
-import { getSocket } from "../../utils/socket";
-import api from "../../utils/api";
+import HeaderBar from "./components/HeaderBar";
+import TimeSelector from "./components/TimeSelector";
+import AdBanner from "./components/AdBanner";
+import GameHeaderCard from "./components/GameHeaderCard";
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -43,7 +42,7 @@ const WingoGame = () => {
     amount: number;
     multiplier?: number;
     result?: "Win" | "Lose";
-    status?: 'pending' | 'settled';
+    status?: "pending" | "settled";
     resultNumber?: number;
     createdAt?: string;
   }
@@ -60,7 +59,7 @@ const WingoGame = () => {
   }
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [roundLoading, setRoundLoading] = useState(false);
-  const [roundError, setRoundError] = useState(null);
+  const [roundError, setRoundError] = useState<string | null>(null);
   const [timerDuration, setTimerDuration] = useState(30);
   const [timerPeriod, setTimerPeriod] = useState("");
 
@@ -79,8 +78,8 @@ const WingoGame = () => {
       .replace("min", "m")
       .replace(/\s/g, "")
       .trim();
-    
-    fetch(`https://rj-755j.onrender.com/api/wingo/history?interval=${encodeURIComponent(interval)}`)
+
+    fetch(buildApiUrl(API_ENDPOINTS.WINGO_HISTORY(interval)))
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch game history");
         const data = await res.json();
@@ -109,35 +108,130 @@ const WingoGame = () => {
       .finally(() => setLoadingHistory(false));
   }, [selectedInterval]); // Add selectedInterval to refresh history when interval changes
 
+  // Function to fetch current round with retry logic
+  const fetchCurrentRound = async (intervalLabel: string, retryCount = 0) => {
+    const maxRetries = 5;
+    setRoundLoading(true);
+    setRoundError(null);
+    
+    try {
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.WINGO_CURRENT_ROUND(intervalLabel)));
+      
+      if (!res.ok) {
+        if (res.status === 404 && retryCount < maxRetries) {
+          // No current round found, retry after delay
+          console.log(`🔄 No current round found, retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => {
+            fetchCurrentRound(intervalLabel, retryCount + 1);
+          }, 2000);
+          return;
+        }
+        throw new Error("No current round available");
+      }
+      
+      const round = await res.json();
+      setCurrentRound(round);
+      setTimerPeriod(round.period || "");
+      
+      // Calculate timer duration (seconds left)
+      const endTime = new Date(round.endTime).getTime();
+      const now = Date.now();
+      const diff = Math.floor((endTime - now) / 1000);
+      setTimerDuration(diff > 0 ? diff : 0);
+      
+      console.log(`✅ Round loaded: ${round.period}, Duration: ${diff}s`);
+    } catch (err: any) {
+      console.error('❌ Error fetching round:', err.message);
+      if (retryCount >= maxRetries) {
+        setRoundError("Waiting for new round...");
+        // Keep trying every 5 seconds
+        setTimeout(() => {
+          fetchCurrentRound(intervalLabel, 0);
+        }, 5000);
+      }
+    } finally {
+      if (retryCount === 0) {
+        setRoundLoading(false);
+      }
+    }
+  };
+
   // Fetch current round info from backend when interval changes
   useEffect(() => {
     let intervalLabel = selectedInterval
       .replace("WinGo ", "")
       .replace("sec", "s")
-      .replace("min", "m")  // Fixed: lowercase "min" not "Min"
+      .replace("min", "m") // Fixed: lowercase "min" not "Min"
       .replace(/\s/g, "") // Remove all spaces
       .trim();
-    setRoundLoading(true);
-    setRoundError(null);
     setCurrentRound(null);
-    fetch(
-      `https://rj-755j.onrender.com/api/wingo/round/current?interval=${encodeURIComponent(
-        intervalLabel
-      )}`
-    )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("No current round");
-        const round = await res.json();
-        setCurrentRound(round);
-        setTimerPeriod(round.period || "");
-        // Calculate timer duration (seconds left)
-        const endTime = new Date(round.endTime).getTime();
-        const now = Date.now();
-        const diff = Math.floor((endTime - now) / 1000);
-        setTimerDuration(diff > 0 ? diff : 0);
-      })
-      .catch((err) => setRoundError(err.message || "Error fetching round"))
-      .finally(() => setRoundLoading(false));
+    fetchCurrentRound(intervalLabel);
+  }, [selectedInterval]);
+
+  // Socket.IO real-time timer synchronization
+  useEffect(() => {
+    const socket = getSocket();
+    
+    const handleRoundCreated = (data: any) => {
+      const currentInterval = selectedInterval
+        .replace("WinGo ", "")
+        .replace("sec", "s")
+        .replace("min", "m")
+        .replace(/\s/g, "")
+        .trim();
+        
+      // Only update if this is for the current interval
+      if (data.interval === currentInterval) {
+        console.log('🎉 New round received via Socket.IO:', data);
+        setCurrentRound(data.round);
+        setTimerPeriod(data.round.period || "");
+        setTimerDuration(data.timeRemaining > 0 ? data.timeRemaining : 0);
+        setRoundError(null);
+      }
+    };
+    
+    const handleRoundSettled = (data: any) => {
+      console.log('⚡ Round settled via Socket.IO:', data);
+      // Refresh game history when round settles
+      const interval = selectedInterval
+        .replace("WinGo ", "")
+        .replace("sec", "s")
+        .replace("min", "m")
+        .replace(/\s/g, "")
+        .trim();
+      
+      // Fetch updated history
+      fetch(buildApiUrl(API_ENDPOINTS.WINGO_HISTORY(interval)))
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            const mapped = (Array.isArray(data) ? data : data.history || []).map(
+              (item: any, i: number) => ({
+                id: item.interval && item.serialNumber
+                  ? `${item.interval}-${item.serialNumber}`
+                  : item.period || String(i),
+                period: item.interval && item.serialNumber
+                  ? `${item.interval}-${item.serialNumber}`
+                  : item.period || String(i),
+                number: item.resultNumber,
+                status: item.resultNumber == null ? "pending" : "settled",
+                ...item,
+              })
+            );
+            setGameHistoryData(mapped);
+            setChartData(mapped);
+          }
+        })
+        .catch(console.error);
+    };
+    
+    socket.on('round:created', handleRoundCreated);
+    socket.on('round:settled', handleRoundSettled);
+    
+    return () => {
+      socket.off('round:created', handleRoundCreated);
+      socket.off('round:settled', handleRoundSettled);
+    };
   }, [selectedInterval]);
 
   useEffect(() => {
@@ -167,25 +261,41 @@ const WingoGame = () => {
                   : String(i),
               betType: item.betType || item.type || "",
               amount: typeof item.amount === "number" ? item.amount : 0,
-              multiplier: typeof item.multiplier === "number" ? item.multiplier : undefined,
-              status: item.status === "-" || item.status === "pending" ? "pending" : "settled",
+              multiplier:
+                typeof item.multiplier === "number"
+                  ? item.multiplier
+                  : undefined,
+              status:
+                item.status === "-" || item.status === "pending"
+                  ? "pending"
+                  : "settled",
               result:
                 item.status === "Win" || item.result === "Win"
                   ? "Win"
-                  : (item.status === "Lose" || item.result === "Lose")
+                  : item.status === "Lose" || item.result === "Lose"
                   ? "Lose"
                   : undefined,
-              resultNumber: typeof item.resultNumber === "number" ? item.resultNumber : undefined,
-              createdAt: item.createdAt || item.timestamp || new Date().toISOString(),
-              ...(item.type === 'color' && { betType: item.value }),
-              ...(item.type === 'number' && { betType: `Digit ${item.value}` }),
-              ...(item.type === 'bigSmall' && { betType: item.value.toUpperCase() })
+              resultNumber:
+                typeof item.resultNumber === "number"
+                  ? item.resultNumber
+                  : undefined,
+              createdAt:
+                item.createdAt || item.timestamp || new Date().toISOString(),
+              ...(item.type === "color" && { betType: item.value }),
+              ...(item.type === "number" && { betType: `Digit ${item.value}` }),
+              ...(item.type === "bigSmall" && {
+                betType: item.value.toUpperCase(),
+              }),
             }))
           : ([] as MyHistoryItem[]);
         setMyHistoryData(mapped);
       } catch (err: any) {
-        setErrorMyHistory(err.response?.data?.error || err.message || "Error fetching my bet history");
-        console.error('Error fetching bet history:', err);
+        setErrorMyHistory(
+          err.response?.data?.error ||
+            err.message ||
+            "Error fetching my bet history"
+        );
+        console.error("Error fetching bet history:", err);
       } finally {
         setLoadingMyHistory(false);
       }
@@ -235,7 +345,7 @@ const WingoGame = () => {
         roundLoading={roundLoading}
         roundError={roundError}
       />
-        <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
+      <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
         <BetOptions onSelect={(color) => handleOpenBet(color)} />
         <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
         <MultiplierGrid
@@ -246,11 +356,11 @@ const WingoGame = () => {
               console.log("Multiplier selected:", value); // or use it for other logic
             }
           }}
-          />
+        />
         <BigSmallButtons
           onSelect={(value) => handleOpenBet(value.toUpperCase())}
-          />
-          </div>
+        />
+      </div>
       {/* <div className="flex justify-center items-center flex-col bg-[#2B3270] px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full">
 
       </div> */}
@@ -267,9 +377,7 @@ const WingoGame = () => {
           // 2. Refresh my bet history
           if (user?.id) {
             setLoadingMyHistory(true);
-            fetch(
-              `https://rj-755j.onrender.com/api/wingo/my-bets?userId=${user.id}`
-            )
+            fetch(buildApiUrl(API_ENDPOINTS.WINGO_MY_BETS(Number(user.id))))
               .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to fetch my bet history");
                 const data = await res.json();

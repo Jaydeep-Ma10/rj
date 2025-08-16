@@ -1,4 +1,4 @@
-import prisma from '../prisma.js';
+import { prisma } from '../prisma/client.js';
 
 // Helper: pick a winning number for user bet
 function pickWinningNumberForBet(bet) {
