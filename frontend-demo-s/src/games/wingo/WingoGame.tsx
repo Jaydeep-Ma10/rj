@@ -259,7 +259,7 @@ const WingoGame = () => {
                   : item.period
                   ? String(item.period)
                   : String(i),
-              betType: item.betType || item.type || "",
+              betType: item.betValue || item.betType || item.type || "",
               amount: typeof item.amount === "number" ? item.amount : 0,
               multiplier:
                 typeof item.multiplier === "number"
@@ -270,9 +270,9 @@ const WingoGame = () => {
                   ? "pending"
                   : "settled",
               result:
-                item.status === "Win" || item.result === "Win"
+                item.status === "Win" || item.result === "Win" || item.win === true
                   ? "Win"
-                  : item.status === "Lose" || item.result === "Lose"
+                  : item.status === "Lose" || item.result === "Lose" || item.win === false
                   ? "Lose"
                   : undefined,
               resultNumber:

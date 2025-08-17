@@ -196,6 +196,16 @@ async function initializeAdmins() {
   }
 }
 
+// Initialize demo users for promotion
+async function initializeDemoUsers() {
+  try {
+    const { demoUserService } = await import('./services/demoUserService.js');
+    await demoUserService.initializeDemoUsers();
+  } catch (error) {
+    console.error('❌ Error initializing demo users:', error.message);
+  }
+}
+
 // Initialize test user for development
 async function initializeTestUser() {
   try {
@@ -240,18 +250,21 @@ async function initializeApp() {
     // 3. Initialize admin users
     await initializeAdmins();
     
-    // 4. Initialize test user for development
+    // 4. Initialize demo users for promotion
+    await initializeDemoUsers();
+    
+    // 5. Initialize test user for development
     await initializeTestUser();
     
-    // 5. Initialize round management
+    // 6. Initialize round management
     const { initRoundManagement } = await import('./utils/roundManager.js');
     const cleanupRoundManagement = initRoundManagement();
     
-    // 6. Initialize keep-alive for Render free tier
+    // 7. Initialize keep-alive for Render free tier
     const { initKeepAlive } = await import('./utils/keepAlive.js');
     initKeepAlive();
     
-    // 7. Set up graceful shutdown
+    // 8. Set up graceful shutdown
     const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
     shutdownSignals.forEach(signal => {
       process.on(signal, () => {
@@ -285,7 +298,8 @@ async function setupRoutes() {
     { path: '/api', module: './routes/manualWithdrawRoutes.js' },
     { path: '/api/wingo', module: './routes/wingoRoutes.js' },
     { path: '/api/files', module: './routes/fileUpload.js' },
-    { path: '/admin', module: './routes/adminAuthRoutes.js' }
+    { path: '/admin', module: './routes/adminAuthRoutes.js' },
+    { path: '/api/demo', module: './routes/demoRoutes.js' }
   ];
 
   // Load routes sequentially to ensure proper loading

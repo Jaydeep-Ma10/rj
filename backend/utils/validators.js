@@ -153,11 +153,41 @@ export const validateAll = (fields) => {
   };
 };
 
+// Login input validation
+export const validateLoginInput = (data) => {
+  const { mobile, password } = data;
+  const errors = {};
+  let isValid = true;
+
+  // Validate mobile
+  const mobileValidation = validateMobile(mobile);
+  if (!mobileValidation.isValid) {
+    errors.mobile = mobileValidation;
+    isValid = false;
+  }
+
+  // Validate password (basic check for login)
+  if (!password) {
+    errors.password = {
+      isValid: false,
+      errors: ['Password is required']
+    };
+    isValid = false;
+  }
+
+  return {
+    isValid,
+    errors,
+    values: { mobile, password }
+  };
+};
+
 export default {
   validateName,
   validateMobile,
   validatePassword,
   validateAll,
+  validateLoginInput,
   rules: validationRules,
   messages: validationMessages
 };

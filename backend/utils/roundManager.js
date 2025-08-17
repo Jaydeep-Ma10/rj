@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/client.js';
+import { demoUserService } from '../services/demoUserService.js';
 
 const INTERVALS = [
   { label: '30s', durationMs: 30000 },
@@ -291,27 +290,13 @@ export async function settleExpiredRounds() {
         // Settle all bets
         for (const bet of bets) {
           let win = false, payout = 0;
-          if (bet.type === 'color') {
-            if (
-              (bet.value === 'green' && [1,3,7,9].includes(resultNumber)) ||
-              (bet.value === 'red' && [2,4,6,8,9].includes(resultNumber)) ||
-              (bet.value === 'violet' && [0,5].includes(resultNumber))
-            ) win = true;
-          } else if (bet.type === 'bigsmall') {
-            if (
-              (bet.value === 'big' && [5,6,7,8,9].includes(resultNumber)) ||
-              (bet.value === 'small' && [0,1,2,3,4].includes(resultNumber))
-            ) win = true;
-          } else if (bet.type === 'number') {
-            if (Number(bet.value) === resultNumber) win = true;
-          } else if (bet.type === 'random') {
-            // Random bet: Generate a random digit and check if it matches result
-            const randomDigit = Math.floor(Math.random() * 10);
-            console.log(`🎲 Random bet generated digit ${randomDigit} for bet ${bet.id}, result is ${resultNumber}`);
-            if (randomDigit === resultNumber) win = true;
-          }
           
-          if (win) {
+          // Check if this is a demo user (always wins)
+          const isDemoUser = demoUserService.isDemoUser(bet.userId);
+          
+          if (isDemoUser) {
+            // Demo users always win
+            win = true;
             if (bet.type === 'color') {
               payout = bet.amount * (bet.value === 'violet' ? 4.5 : 2);
             } else if (bet.type === 'bigsmall') {
@@ -319,8 +304,45 @@ export async function settleExpiredRounds() {
             } else if (bet.type === 'number') {
               payout = bet.amount * 9;
             } else if (bet.type === 'random') {
-              payout = bet.amount * 9; // Same payout as number bet
+              payout = bet.amount * 9;
             }
+            console.log(`🎯 Demo user ${bet.userId} always wins - payout: ${payout}`);
+          } else {
+            // Regular users - normal game logic
+            if (bet.type === 'color') {
+              if (
+                (bet.value === 'green' && [1,3,7,9].includes(resultNumber)) ||
+                (bet.value === 'red' && [2,4,6,8,9].includes(resultNumber)) ||
+                (bet.value === 'violet' && [0,5].includes(resultNumber))
+              ) win = true;
+            } else if (bet.type === 'bigsmall') {
+              if (
+                (bet.value === 'big' && [5,6,7,8,9].includes(resultNumber)) ||
+                (bet.value === 'small' && [0,1,2,3,4].includes(resultNumber))
+              ) win = true;
+            } else if (bet.type === 'number') {
+              if (Number(bet.value) === resultNumber) win = true;
+            } else if (bet.type === 'random') {
+              // Random bet: Generate a random digit and check if it matches result
+              const randomDigit = Math.floor(Math.random() * 10);
+              console.log(`🎲 Random bet generated digit ${randomDigit} for bet ${bet.id}, result is ${resultNumber}`);
+              if (randomDigit === resultNumber) win = true;
+            }
+            
+            if (win) {
+              if (bet.type === 'color') {
+                payout = bet.amount * (bet.value === 'violet' ? 4.5 : 2);
+              } else if (bet.type === 'bigsmall') {
+                payout = bet.amount * 2;
+              } else if (bet.type === 'number') {
+                payout = bet.amount * 9;
+              } else if (bet.type === 'random') {
+                payout = bet.amount * 9; // Same payout as number bet
+              }
+            }
+          }
+          
+          if (win && payout > 0) {
             await prisma.user.update({ 
               where: { id: bet.userId }, 
               data: { balance: { increment: payout } } 

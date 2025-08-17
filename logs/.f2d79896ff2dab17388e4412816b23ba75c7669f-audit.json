@@ -6,11 +6,6 @@
     "auditLog": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\.f2d79896ff2dab17388e4412816b23ba75c7669f-audit.json",
     "files": [
         {
-            "date": 1754251277724,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-04.log",
-            "hash": "6995a1cbb69d2fce49f7abf3cd61c2e2f0fa0a620a82abc5097b2a85529914a5"
-        },
-        {
             "date": 1754333897459,
             "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-05.log",
             "hash": "b63ed94b2bbf740265bb795ab6da764493ed87c09231115ee7c97a50e960e9ad"
@@ -59,6 +54,11 @@
             "date": 1755374445215,
             "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-17.log",
             "hash": "d78b790199499c23635307633800c549cd843f59d125c9f20dfe23b5e5a670be"
+        },
+        {
+            "date": 1755466692502,
+            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-18.log",
+            "hash": "a1a7b1cf84c1149229b92e8e61a01be3abc55cfac592726a80fb1acd51c9d1f9"
         }
     ],
     "hashType": "sha256"
