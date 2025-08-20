@@ -20,7 +20,7 @@ const getColorClass = (num: number) => {
 
 const GameChart: React.FC<Props> = ({ data }) => {
   return (
-    <div className="bg-[#1e2d5c] p-4 mt-4 rounded-xl text-white">
+    <div className="bg-[#1e2d5c] p-4 mt-4 rounded-xl text-white pb-16">
       <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4">📊 Recent Results Chart</h2>
       <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2">
         {data.map((item) => (

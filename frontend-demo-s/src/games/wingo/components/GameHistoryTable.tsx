@@ -87,7 +87,7 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
   }
 
   return (
-    <div className="bg-[#2B3270] text-white rounded-xl mx-4 sm:p-4 md:p-6 mt-3 md:mt-4 shadow-lg pb-16">
+    <div className="bg-[#2B3270] text-white rounded-xl">
       {/* Table Views */}
       <div className="block sm:hidden">
         <table className="w-full text-xs sm:text-sm md:text-base table-auto">

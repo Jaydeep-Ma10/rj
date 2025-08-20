@@ -113,14 +113,20 @@ const WingoGame = () => {
     const maxRetries = 5;
     setRoundLoading(true);
     setRoundError(null);
-    
+
     try {
-      const res = await fetch(buildApiUrl(API_ENDPOINTS.WINGO_CURRENT_ROUND(intervalLabel)));
-      
+      const res = await fetch(
+        buildApiUrl(API_ENDPOINTS.WINGO_CURRENT_ROUND(intervalLabel))
+      );
+
       if (!res.ok) {
         if (res.status === 404 && retryCount < maxRetries) {
           // No current round found, retry after delay
-          console.log(`🔄 No current round found, retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`);
+          console.log(
+            `🔄 No current round found, retrying in 2 seconds... (${
+              retryCount + 1
+            }/${maxRetries})`
+          );
           setTimeout(() => {
             fetchCurrentRound(intervalLabel, retryCount + 1);
           }, 2000);
@@ -128,20 +134,20 @@ const WingoGame = () => {
         }
         throw new Error("No current round available");
       }
-      
+
       const round = await res.json();
       setCurrentRound(round);
       setTimerPeriod(round.period || "");
-      
+
       // Calculate timer duration (seconds left)
       const endTime = new Date(round.endTime).getTime();
       const now = Date.now();
       const diff = Math.floor((endTime - now) / 1000);
       setTimerDuration(diff > 0 ? diff : 0);
-      
+
       console.log(`✅ Round loaded: ${round.period}, Duration: ${diff}s`);
     } catch (err: any) {
-      console.error('❌ Error fetching round:', err.message);
+      console.error("❌ Error fetching round:", err.message);
       if (retryCount >= maxRetries) {
         setRoundError("Waiting for new round...");
         // Keep trying every 5 seconds
@@ -171,7 +177,7 @@ const WingoGame = () => {
   // Socket.IO real-time timer synchronization
   useEffect(() => {
     const socket = getSocket();
-    
+
     const handleRoundCreated = (data: any) => {
       const currentInterval = selectedInterval
         .replace("WinGo ", "")
@@ -179,19 +185,19 @@ const WingoGame = () => {
         .replace("min", "m")
         .replace(/\s/g, "")
         .trim();
-        
+
       // Only update if this is for the current interval
       if (data.interval === currentInterval) {
-        console.log('🎉 New round received via Socket.IO:', data);
+        console.log("🎉 New round received via Socket.IO:", data);
         setCurrentRound(data.round);
         setTimerPeriod(data.round.period || "");
         setTimerDuration(data.timeRemaining > 0 ? data.timeRemaining : 0);
         setRoundError(null);
       }
     };
-    
+
     const handleRoundSettled = (data: any) => {
-      console.log('⚡ Round settled via Socket.IO:', data);
+      console.log("⚡ Round settled via Socket.IO:", data);
       // Refresh game history when round settles
       const interval = selectedInterval
         .replace("WinGo ", "")
@@ -199,38 +205,40 @@ const WingoGame = () => {
         .replace("min", "m")
         .replace(/\s/g, "")
         .trim();
-      
+
       // Fetch updated history
       fetch(buildApiUrl(API_ENDPOINTS.WINGO_HISTORY(interval)))
         .then(async (res) => {
           if (res.ok) {
             const data = await res.json();
-            const mapped = (Array.isArray(data) ? data : data.history || []).map(
-              (item: any, i: number) => ({
-                id: item.interval && item.serialNumber
+            const mapped = (
+              Array.isArray(data) ? data : data.history || []
+            ).map((item: any, i: number) => ({
+              id:
+                item.interval && item.serialNumber
                   ? `${item.interval}-${item.serialNumber}`
                   : item.period || String(i),
-                period: item.interval && item.serialNumber
+              period:
+                item.interval && item.serialNumber
                   ? `${item.interval}-${item.serialNumber}`
                   : item.period || String(i),
-                number: item.resultNumber,
-                status: item.resultNumber == null ? "pending" : "settled",
-                ...item,
-              })
-            );
+              number: item.resultNumber,
+              status: item.resultNumber == null ? "pending" : "settled",
+              ...item,
+            }));
             setGameHistoryData(mapped);
             setChartData(mapped);
           }
         })
         .catch(console.error);
     };
-    
-    socket.on('round:created', handleRoundCreated);
-    socket.on('round:settled', handleRoundSettled);
-    
+
+    socket.on("round:created", handleRoundCreated);
+    socket.on("round:settled", handleRoundSettled);
+
     return () => {
-      socket.off('round:created', handleRoundCreated);
-      socket.off('round:settled', handleRoundSettled);
+      socket.off("round:created", handleRoundCreated);
+      socket.off("round:settled", handleRoundSettled);
     };
   }, [selectedInterval]);
 
@@ -270,9 +278,13 @@ const WingoGame = () => {
                   ? "pending"
                   : "settled",
               result:
-                item.status === "Win" || item.result === "Win" || item.win === true
+                item.status === "Win" ||
+                item.result === "Win" ||
+                item.win === true
                   ? "Win"
-                  : item.status === "Lose" || item.result === "Lose" || item.win === false
+                  : item.status === "Lose" ||
+                    item.result === "Lose" ||
+                    item.win === false
                   ? "Lose"
                   : undefined,
               resultNumber:
@@ -415,7 +427,7 @@ const WingoGame = () => {
       />
 
       {/* Tab Switcher Buttons */}
-      <div className=" rounded-xl mt-6 m-4">
+      <div className=" rounded-xl mt-6 m-4 ">
         <div className="flex justify-between items-center gap-2">
           <button
             onClick={() => setActiveTab("game")}
@@ -458,77 +470,81 @@ const WingoGame = () => {
         </div>
       </div>
 
-      {/* Conditionally Rendered Sections */}
-      {activeTab === "game" && (
-        <>
-          {loadingHistory && (
-            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-                <p className="text-gray-300 text-sm">Loading game history...</p>
+      <div className="rounded-xl mx-4 sm:p-4 md:p-6 mt-3 md:mt-4 shadow-lg pb-16">
+        {/* Conditionally Rendered Sections */}
+        {activeTab === "game" && (
+          <>
+            {loadingHistory && (
+              <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                  <p className="text-gray-300 text-sm">
+                    Loading game history...
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-          {errorHistory && (
-            <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
-              <div className="flex flex-col items-center space-y-2">
-                <span className="text-2xl">⚠️</span>
-                <p className="text-sm">{errorHistory}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
-                >
-                  Retry
-                </button>
+            )}
+            {errorHistory && (
+              <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
+                <div className="flex flex-col items-center space-y-2">
+                  <span className="text-2xl">⚠️</span>
+                  <p className="text-sm">{errorHistory}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-          {!loadingHistory && !errorHistory && (
-            <GameHistoryTable history={gameHistoryData} />
-          )}
-        </>
-      )}
+            )}
+            {!loadingHistory && !errorHistory && (
+              <GameHistoryTable history={gameHistoryData} />
+            )}
+          </>
+        )}
 
-      {
-        activeTab === "chart" && <GameChart data={chartData} />
-        //  (
-        //   <div className="bg-[#1e2d5c] text-white p-4 mt-4 rounded-lg">
-        //     <h2 className="text-center text-lg font-bold">📈 Chart View Coming Soon</h2>
-        //   </div>
-        // )
-      }
+        {
+          activeTab === "chart" && <GameChart data={chartData} />
+          //  (
+          //   <div className="bg-[#1e2d5c] text-white p-4 mt-4 rounded-lg">
+          //     <h2 className="text-center text-lg font-bold">📈 Chart View Coming Soon</h2>
+          //   </div>
+          // )
+        }
 
-      {activeTab === "my" && (
-        <>
-          {loadingMyHistory && (
-            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-                <p className="text-gray-300 text-sm">
-                  Loading your bet history...
-                </p>
+        {activeTab === "my" && (
+          <>
+            {loadingMyHistory && (
+              <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                  <p className="text-gray-300 text-sm">
+                    Loading your bet history...
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-          {errorMyHistory && (
-            <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
-              <div className="flex flex-col items-center space-y-2">
-                <span className="text-2xl">⚠️</span>
-                <p className="text-sm">{errorMyHistory}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
-                >
-                  Retry
-                </button>
+            )}
+            {errorMyHistory && (
+              <div className="bg-red-900/20 border border-red-500/50 text-red-300 rounded-xl p-4 mt-3 md:mt-4 text-center">
+                <div className="flex flex-col items-center space-y-2">
+                  <span className="text-2xl">⚠️</span>
+                  <p className="text-sm">{errorMyHistory}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-          {!loadingMyHistory && !errorMyHistory && (
-            <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
-          )}
-        </>
-      )}
+            )}
+            {!loadingMyHistory && !errorMyHistory && (
+              <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
