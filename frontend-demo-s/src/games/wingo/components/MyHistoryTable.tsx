@@ -40,7 +40,7 @@ const formatDate = (dateString?: string) => {
 const MyHistoryTable: React.FC<Props> = ({ data, loading, error }) => {
   if (loading) {
     return (
-      <div className="bg-[#1e2d5c] text-white rounded-xl p-4 mt-4">
+      <div className="bg-[#1e2d5c] text-white rounded-xl p-4 mt-4  mb-32">
         <h2 className="text-lg font-bold mb-4">My Bet History</h2>
         <div className="text-center py-8">
           <div className="animate-pulse space-y-4">
