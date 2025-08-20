@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../utils/api';
-import { API_ENDPOINTS } from '../../config/api';
+import axios from 'axios';
+import { API_CONFIG } from '../../config/api';
 
 const AdminLogin = () => {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -16,7 +16,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = await api.post(API_ENDPOINTS.ADMIN_LOGIN, form);
+      const res = await axios.post(`${API_CONFIG.BASE_URL}/admin/login`, form);
       localStorage.setItem("adminToken", res.data.token);
       navigate("/admin/dashboard");
     } catch (err: any) {

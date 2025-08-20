@@ -462,7 +462,7 @@ const WingoGame = () => {
       {activeTab === "game" && (
         <>
           {loadingHistory && (
-            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center">
+            <div className="bg-[#1e2d5c] text-white rounded-xl p-6 mt-3 md:mt-4 text-center  mb-32">
               <div className="flex flex-col items-center space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
                 <p className="text-gray-300 text-sm">Loading game history...</p>
@@ -484,7 +484,7 @@ const WingoGame = () => {
             </div>
           )}
           {!loadingHistory && !errorHistory && (
-            <GameHistoryTable history={gameHistoryData} />
+            <GameHistoryTable history={gameHistoryData}  />
           )}
         </>
       )}
@@ -525,7 +525,7 @@ const WingoGame = () => {
             </div>
           )}
           {!loadingMyHistory && !errorMyHistory && (
-            <MyHistoryTable data={myHistoryData as MyHistoryItem[]} />
+            <MyHistoryTable data={myHistoryData as MyHistoryItem[] } />
           )}
         </>
       )}
