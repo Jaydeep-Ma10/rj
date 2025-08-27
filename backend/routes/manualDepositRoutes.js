@@ -87,7 +87,8 @@ const depositValidationRules = [
     .notEmpty().withMessage('Name is required')
     .isString().withMessage('Name must be a string')
     .trim()
-    .isLength({ min: 3, max: 50 }).withMessage('Name must be between 3 and 50 characters'),
+    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z0-9\s]+$/).withMessage('Name can only contain letters, numbers, and spaces'),
 
   body('mobile')
     .optional({ checkFalsy: true })
@@ -103,7 +104,8 @@ const depositValidationRules = [
     .notEmpty().withMessage('UTR is required')
     .isString().withMessage('UTR must be a string')
     .trim()
-    .isLength({ min: 8, max: 50 }).withMessage('UTR must be between 8 and 50 characters'),
+    .isLength({ min: 5, max: 50 }).withMessage('UTR must be between 5 and 50 characters')
+    .matches(/^[a-zA-Z0-9]+$/).withMessage('UTR can only contain letters and numbers'),
 
   body('method')
     .optional()

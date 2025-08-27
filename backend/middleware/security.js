@@ -191,9 +191,10 @@ export const validateDeposit = [
   body('name')
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be 2-50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Name can only contain letters and spaces'),
+    .matches(/^[a-zA-Z0-9\s]+$/)
+    .withMessage('Name can only contain letters, numbers, and spaces'),
   body('mobile')
+    .optional({ checkFalsy: true })
     .isMobilePhone('any', { strictMode: false })
     .withMessage('Invalid mobile number'),
   body('amount')

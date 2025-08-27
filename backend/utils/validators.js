@@ -6,7 +6,7 @@ export const validationRules = {
   name: {
     minLength: 3,
     maxLength: 50,
-    pattern: /^[a-zA-Z\s'-]+$/
+    pattern: /^[a-zA-Z0-9\s'-]+$/
   },
   mobile: {
     length: 10,
@@ -25,7 +25,7 @@ export const validationMessages = {
     required: 'Name is required',
     minLength: `Name must be at least ${validationRules.name.minLength} characters`,
     maxLength: `Name must not exceed ${validationRules.name.maxLength} characters`,
-    invalid: 'Name can only contain letters, spaces, hyphens, and apostrophes'
+    invalid: 'Name can only contain letters, numbers, spaces, hyphens, and apostrophes'
   },
   mobile: {
     required: 'Mobile number is required',
