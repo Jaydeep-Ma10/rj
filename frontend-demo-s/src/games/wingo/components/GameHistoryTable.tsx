@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface HistoryItem {
   id: string;
@@ -63,6 +63,11 @@ interface Props {
 const GameHistoryTable: React.FC<Props> = ({ history }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Auto-refresh functionality - reset to page 1 when new data comes in
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [history]);
+
   // Paginate the history - show max 500 entries
   const paginatedHistory = history.slice(0, ITEMS_PER_PAGE * TOTAL_PAGES);
   const totalPages = Math.ceil(paginatedHistory.length / ITEMS_PER_PAGE);
@@ -100,8 +105,13 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((item) => (
-              <tr key={item.id} className="border-b border-gray-700 hover:bg-[#33416d]">
+            {currentItems.map((item, index) => (
+              <tr 
+                key={item.id} 
+                className={`border-b border-gray-700 hover:bg-[#33416d] ${
+                  index === 0 && currentPage === 1 ? 'animate-pulse bg-green-900/20' : ''
+                }`}
+              >
                 <td className="py-2 px-3 text-left text-xs font-mono">
                   {new Date().toISOString()
                     .replace(/[-:T.]/g, '')
@@ -149,8 +159,13 @@ const GameHistoryTable: React.FC<Props> = ({ history }) => {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((item) => (
-              <tr key={item.id} className="border-b border-gray-700 hover:bg-[#33416d]">
+            {currentItems.map((item, index) => (
+              <tr 
+                key={item.id} 
+                className={`border-b border-gray-700 hover:bg-[#33416d] ${
+                  index === 0 && currentPage === 1 ? 'animate-pulse bg-green-900/20' : ''
+                }`}
+              >
                 <td className="py-2 px-4 font-mono text-sm md:text-base">
                   {new Date().toISOString()
                     .replace(/[-:T.]/g, '')

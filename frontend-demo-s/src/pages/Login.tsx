@@ -124,10 +124,10 @@ const Login = ({ setNotif }: LoginProps) => {
               Phone Number
             </div>
             <div className="flex justify-center items-center gap-2">
-              <div className="bg-[#2B3270] text-center py-2 flex-[1] text-gray-300 rounded-lg">
+              <div className="bg-[#2B3270] text-center py-3  flex-[1] text-gray-300 rounded-lg">
                 +91
               </div>
-              <div className="relative flex-1">
+              <div className="relative flex-[3]">
                 <input
                   type="tel"
                   name="mobile"
@@ -144,15 +144,15 @@ const Login = ({ setNotif }: LoginProps) => {
                   disabled={isSubmitting}
                 />
                 {errors.mobile && touched.mobile && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500">
+                  <div className="absolute flex right-2 top-1/2 -translate-y-1/2 text-red-500">
                     <RiErrorWarningFill className="w-5 h-5" />
                   </div>
                 )}
               </div>
+            </div>
               {errors.mobile && touched.mobile && (
                 <p className="mt-1 text-sm text-red-500">{errors.mobile}</p>
               )}
-            </div>
           </div>
 
           <div>
@@ -180,10 +180,10 @@ const Login = ({ setNotif }: LoginProps) => {
                   </div>
                 )}
               </div>
+            </div>
               {errors.password && touched.password && (
                 <p className="mt-1 text-sm text-red-500">{errors.password}</p>
               )}
-            </div>
           </div>
 
           <div className="flex justify-center items-center flex-col mt-6 gap-4">

@@ -63,14 +63,18 @@ const WingoGame = () => {
   const [timerDuration, setTimerDuration] = useState(30);
   const [timerPeriod, setTimerPeriod] = useState("");
 
+  // New state for betting restrictions and countdown
+  const [bettingDisabled, setBettingDisabled] = useState(false);
+  const [countdownTimer, setCountdownTimer] = useState<number | null>(null);
+
   // Backend data integration
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingMyHistory, setLoadingMyHistory] = useState(false);
   const [errorHistory, setErrorHistory] = useState<string | null>(null);
   const [errorMyHistory, setErrorMyHistory] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Fetch game history for the selected interval
+  // Function to fetch game history
+  const fetchGameHistory = () => {
     setLoadingHistory(true);
     const interval = selectedInterval
       .replace("WinGo ", "")
@@ -106,6 +110,10 @@ const WingoGame = () => {
         setErrorHistory(err.message || "Error fetching game history")
       )
       .finally(() => setLoadingHistory(false));
+  };
+
+  useEffect(() => {
+    fetchGameHistory();
   }, [selectedInterval]); // Add selectedInterval to refresh history when interval changes
 
   // Function to fetch current round with retry logic
@@ -174,6 +182,38 @@ const WingoGame = () => {
     fetchCurrentRound(intervalLabel);
   }, [selectedInterval]);
 
+  // Timer countdown effect for betting restrictions
+  useEffect(() => {
+    let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+    if (timerDuration > 0) {
+      // Check if we're in the last 5 seconds
+      if (timerDuration <= 5) {
+        setBettingDisabled(true);
+        setCountdownTimer(timerDuration);
+        
+        countdownInterval = setInterval(() => {
+          setCountdownTimer(prev => {
+            if (prev === null || prev <= 1) {
+              setBettingDisabled(false);
+              setCountdownTimer(null);
+              if (countdownInterval) clearInterval(countdownInterval);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setBettingDisabled(false);
+        setCountdownTimer(null);
+      }
+    }
+
+    return () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+    };
+  }, [timerDuration]);
+
   // Socket.IO real-time timer synchronization
   useEffect(() => {
     const socket = getSocket();
@@ -193,44 +233,31 @@ const WingoGame = () => {
         setTimerPeriod(data.round.period || "");
         setTimerDuration(data.timeRemaining > 0 ? data.timeRemaining : 0);
         setRoundError(null);
+        // Reset betting restrictions for new round
+        setBettingDisabled(false);
+        setCountdownTimer(null);
       }
     };
 
     const handleRoundSettled = (data: any) => {
       console.log("⚡ Round settled via Socket.IO:", data);
-      // Refresh game history when round settles
-      const interval = selectedInterval
+      
+      const currentInterval = selectedInterval
         .replace("WinGo ", "")
         .replace("sec", "s")
         .replace("min", "m")
         .replace(/\s/g, "")
         .trim();
 
-      // Fetch updated history
-      fetch(buildApiUrl(API_ENDPOINTS.WINGO_HISTORY(interval)))
-        .then(async (res) => {
-          if (res.ok) {
-            const data = await res.json();
-            const mapped = (
-              Array.isArray(data) ? data : data.history || []
-            ).map((item: any, i: number) => ({
-              id:
-                item.interval && item.serialNumber
-                  ? `${item.interval}-${item.serialNumber}`
-                  : item.period || String(i),
-              period:
-                item.interval && item.serialNumber
-                  ? `${item.interval}-${item.serialNumber}`
-                  : item.period || String(i),
-              number: item.resultNumber,
-              status: item.resultNumber == null ? "pending" : "settled",
-              ...item,
-            }));
-            setGameHistoryData(mapped);
-            setChartData(mapped);
-          }
-        })
-        .catch(console.error);
+      // Only refresh game history if this round settled event is for the current interval
+      if (data.interval === currentInterval) {
+        console.log("🔄 Refreshing game history for current interval:", currentInterval);
+        fetchGameHistory();
+        
+        // Reset betting state only for current interval
+        setBettingDisabled(false);
+        setCountdownTimer(null);
+      }
     };
 
     socket.on("round:created", handleRoundCreated);
@@ -333,6 +360,9 @@ const WingoGame = () => {
   }, [user?.id]);
 
   const handleOpenBet = (option: string) => {
+    if (bettingDisabled) {
+      return; // Don't open modal if betting is disabled
+    }
     setSelectedBet(option);
     setIsModalOpen(true);
   };
@@ -357,7 +387,22 @@ const WingoGame = () => {
         roundLoading={roundLoading}
         roundError={roundError}
       />
-      <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4">
+      
+      <div className="bg-[#2B3270] ml-[13px] mr-[13px] flex flex-col items-center px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 relative">
+        {/* Countdown Timer Overlay */}
+        {bettingDisabled && countdownTimer && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10 rounded-xl">
+            <div className="text-center">
+              <div className="text-6xl font-bold text-white mb-2 animate-pulse">
+                {countdownTimer.toString().padStart(2, '0')}
+              </div>
+              <div className="text-lg text-gray-300">
+                Betting Disabled
+              </div>
+            </div>
+          </div>
+        )}
+        
         <BetOptions onSelect={(color) => handleOpenBet(color)} />
         <DigitGrid onSelectDigit={(digit) => handleOpenBet(`Digit ${digit}`)} />
         <MultiplierGrid
@@ -373,9 +418,6 @@ const WingoGame = () => {
           onSelect={(value) => handleOpenBet(value.toUpperCase())}
         />
       </div>
-      {/* <div className="flex justify-center items-center flex-col bg-[#2B3270] px-2 md:p-4 lg:p-6 rounded-xl shadow-md space-y-4 md:space-y-6 mt-2 md:mt-4 w-full">
-
-      </div> */}
 
       <BetModal
         isOpen={isModalOpen}
