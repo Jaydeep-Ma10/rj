@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { submitManualDeposit } from '../controllers/manualDepositController.js';
+import { uploadRateLimit, validateDeposit } from '../middleware/security.js';
 import {
   transactionSlipUpload,
   isS3Configured,
@@ -134,7 +135,9 @@ const handleValidationResult = (req, res, next) => {
  */
 router.post(
   '/manual-deposit',
+  uploadRateLimit,
   handleSlipUpload,
+  validateDeposit,
   depositValidationRules,
   handleValidationResult,
   async (req, res, next) => {

@@ -1,7 +1,5 @@
 // controllers/userController.js
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/client.js';
 
 // Get user profile
 export const getUserProfile = async (req, res) => {

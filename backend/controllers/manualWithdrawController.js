@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/client.js';
 
 // Handle user withdrawal submission
 export const submitManualWithdraw = async (req, res) => {

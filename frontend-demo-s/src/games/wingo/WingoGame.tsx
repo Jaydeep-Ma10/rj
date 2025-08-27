@@ -16,6 +16,7 @@ import HeaderBar from "./components/HeaderBar";
 import TimeSelector from "./components/TimeSelector";
 import AdBanner from "./components/AdBanner";
 import GameHeaderCard from "./components/GameHeaderCard";
+import BetResultPopup from "./components/BetResultPopup";
 
 const WingoGame = () => {
   const { user } = useAuth();
@@ -66,6 +67,19 @@ const WingoGame = () => {
   // New state for betting restrictions and countdown
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [countdownTimer, setCountdownTimer] = useState<number | null>(null);
+
+  // Bet result popup state
+  interface BetResult {
+    id: string;
+    betType: string;
+    amount: number;
+    result: "Win" | "Lose";
+    payout?: number;
+    resultNumber?: number;
+    period: string;
+  }
+  const [betResultPopup, setBetResultPopup] = useState<BetResult | null>(null);
+  const [previousBetResults, setPreviousBetResults] = useState<Set<string>>(new Set());
 
   // Backend data integration
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -185,32 +199,49 @@ const WingoGame = () => {
   // Timer countdown effect for betting restrictions
   useEffect(() => {
     let countdownInterval: ReturnType<typeof setInterval> | null = null;
+    let mainTimerInterval: ReturnType<typeof setInterval> | null = null;
+
+    // Clear any existing intervals first
+    if (countdownInterval) clearInterval(countdownInterval);
+    if (mainTimerInterval) clearInterval(mainTimerInterval);
 
     if (timerDuration > 0) {
-      // Check if we're in the last 5 seconds
-      if (timerDuration <= 5) {
-        setBettingDisabled(true);
-        setCountdownTimer(timerDuration);
+      // Start main timer that counts down every second
+      let currentTime = timerDuration;
+      
+      mainTimerInterval = setInterval(() => {
+        currentTime -= 1;
         
-        countdownInterval = setInterval(() => {
-          setCountdownTimer(prev => {
-            if (prev === null || prev <= 1) {
-              setBettingDisabled(false);
-              setCountdownTimer(null);
-              if (countdownInterval) clearInterval(countdownInterval);
-              return null;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        setBettingDisabled(false);
-        setCountdownTimer(null);
-      }
+        if (currentTime <= 0) {
+          // Round ended, reset everything
+          setBettingDisabled(false);
+          setCountdownTimer(null);
+          setTimerDuration(0);
+          if (mainTimerInterval) clearInterval(mainTimerInterval);
+          if (countdownInterval) clearInterval(countdownInterval);
+          return;
+        }
+        
+        // Update timer duration
+        setTimerDuration(currentTime);
+        
+        // Check if we're in the last 5 seconds
+        if (currentTime <= 5 && currentTime > 0) {
+          setBettingDisabled(true);
+          setCountdownTimer(currentTime);
+        } else {
+          setBettingDisabled(false);
+          setCountdownTimer(null);
+        }
+      }, 1000);
+    } else {
+      setBettingDisabled(false);
+      setCountdownTimer(null);
     }
 
     return () => {
       if (countdownInterval) clearInterval(countdownInterval);
+      if (mainTimerInterval) clearInterval(mainTimerInterval);
     };
   }, [timerDuration]);
 
@@ -231,11 +262,21 @@ const WingoGame = () => {
         console.log("🎉 New round received via Socket.IO:", data);
         setCurrentRound(data.round);
         setTimerPeriod(data.round.period || "");
-        setTimerDuration(data.timeRemaining > 0 ? data.timeRemaining : 0);
+        
+        // Calculate fresh timer duration from server data
+        const endTime = new Date(data.round.endTime).getTime();
+        const now = Date.now();
+        const freshDuration = Math.floor((endTime - now) / 1000);
+        const safeDuration = Math.max(0, freshDuration);
+        
+        setTimerDuration(safeDuration);
         setRoundError(null);
-        // Reset betting restrictions for new round
+        
+        // Reset betting restrictions for new round - let the timer effect handle countdown
         setBettingDisabled(false);
         setCountdownTimer(null);
+        
+        console.log(`🕒 New round timer set to ${safeDuration}s`);
       }
     };
 
@@ -254,9 +295,15 @@ const WingoGame = () => {
         console.log("🔄 Refreshing game history for current interval:", currentInterval);
         fetchGameHistory();
         
-        // Reset betting state only for current interval
+        // Reset betting state and timer for settled round
         setBettingDisabled(false);
         setCountdownTimer(null);
+        setTimerDuration(0); // Force timer reset
+        
+        // Fetch new round immediately after settlement
+        setTimeout(() => {
+          fetchCurrentRound(currentInterval);
+        }, 1000);
       }
     };
 
@@ -327,6 +374,36 @@ const WingoGame = () => {
               }),
             }))
           : ([] as MyHistoryItem[]);
+        
+        // Check for newly settled bets and show popup (only for current user's bets)
+        const newlySettledBets = mapped.filter(bet => 
+          bet.status === "settled" && 
+          bet.result && 
+          !previousBetResults.has(bet.id)
+        );
+        
+        if (newlySettledBets.length > 0 && user?.id && !betResultPopup) {
+          // Show popup for the most recent settled bet (only if no popup is currently showing)
+          const latestBet = newlySettledBets[0];
+          if (latestBet) {
+            // Update the set of processed bet results BEFORE showing popup
+            const newProcessedResults = new Set(previousBetResults);
+            newlySettledBets.forEach(bet => newProcessedResults.add(bet.id));
+            setPreviousBetResults(newProcessedResults);
+            
+            // Show popup only once per bet
+            setBetResultPopup({
+              id: latestBet.id,
+              betType: latestBet.betType,
+              amount: latestBet.amount,
+              result: latestBet.result as "Win" | "Lose",
+              payout: latestBet.result === "Win" ? (latestBet.amount * (latestBet.multiplier || 2)) : undefined,
+              resultNumber: latestBet.resultNumber,
+              period: latestBet.period
+            });
+          }
+        }
+        
         setMyHistoryData(mapped);
       } catch (err: any) {
         setErrorMyHistory(
@@ -456,6 +533,35 @@ const WingoGame = () => {
                           : undefined,
                     }))
                   : ([] as MyHistoryItem[]);
+                
+                // Check for newly settled bets and show popup
+                const newlySettledBets = mapped.filter(bet => 
+                  bet.status === "settled" && 
+                  bet.result && 
+                  !previousBetResults.has(bet.id)
+                );
+                
+                if (newlySettledBets.length > 0) {
+                  // Show popup for the most recent settled bet
+                  const latestBet = newlySettledBets[0];
+                  if (latestBet) {
+                    setBetResultPopup({
+                      id: latestBet.id,
+                      betType: latestBet.betType,
+                      amount: latestBet.amount,
+                      result: latestBet.result as "Win" | "Lose",
+                      payout: latestBet.result === "Win" ? (latestBet.amount * (latestBet.multiplier || 2)) : undefined,
+                      resultNumber: latestBet.resultNumber,
+                      period: latestBet.period
+                    });
+                  }
+                  
+                  // Update the set of processed bet results
+                  const newProcessedResults = new Set(previousBetResults);
+                  newlySettledBets.forEach(bet => newProcessedResults.add(bet.id));
+                  setPreviousBetResults(newProcessedResults);
+                }
+                
                 setMyHistoryData(mapped);
               })
               .catch((err) =>
@@ -466,6 +572,12 @@ const WingoGame = () => {
               .finally(() => setLoadingMyHistory(false));
           }
         }}
+      />
+
+      {/* Bet Result Popup */}
+      <BetResultPopup
+        betResult={betResultPopup}
+        onClose={() => setBetResultPopup(null)}
       />
 
       {/* Tab Switcher Buttons */}

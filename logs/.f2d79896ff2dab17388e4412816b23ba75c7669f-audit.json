@@ -6,59 +6,9 @@
     "auditLog": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\.f2d79896ff2dab17388e4412816b23ba75c7669f-audit.json",
     "files": [
         {
-            "date": 1754333897459,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-05.log",
-            "hash": "b63ed94b2bbf740265bb795ab6da764493ed87c09231115ee7c97a50e960e9ad"
-        },
-        {
-            "date": 1754418801896,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-06.log",
-            "hash": "954134611040d22b595c3ecf162023b1b279e9909b02c15e5db90aa8dbcd6dfe"
-        },
-        {
-            "date": 1754513923579,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-07.log",
-            "hash": "a8ecc0a6b792073b2eda346004f32798e39bf20490779353ebae02b584396912"
-        },
-        {
-            "date": 1754848801539,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-10.log",
-            "hash": "b3ad759072fc778b5faab07415d9466aabafc8ef4b09c6bf044d37fe00034ede"
-        },
-        {
-            "date": 1754997254387,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-12.log",
-            "hash": "27182ac202046c556837c9a6fd24c0963186fe0381cfa8097cdf8c4f19af8b22"
-        },
-        {
-            "date": 1755078730086,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-13.log",
-            "hash": "82def0834ed6bd3f48a74440bda8deb885350c3dee0201f6cdf94b73805454d8"
-        },
-        {
-            "date": 1755110025220,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-14.log",
-            "hash": "304d21b979b2d6e27512e159c2cbabec8ba0f3d39c70b506ee85c394e55210ed"
-        },
-        {
-            "date": 1755196423631,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-15.log",
-            "hash": "2bfaa1b650a8dd5cb7c96009b2372143b6cbc04c3eeea6d3e6b947de09aa6e76"
-        },
-        {
-            "date": 1755292676830,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-16.log",
-            "hash": "270fc183e705ef6bfe01a38b06cb923764f8a641794295f5ff730cd500fa99f8"
-        },
-        {
-            "date": 1755374445215,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-17.log",
-            "hash": "d78b790199499c23635307633800c549cd843f59d125c9f20dfe23b5e5a670be"
-        },
-        {
-            "date": 1755466692502,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-18.log",
-            "hash": "a1a7b1cf84c1149229b92e8e61a01be3abc55cfac592726a80fb1acd51c9d1f9"
+            "date": 1756284185898,
+            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\error-2025-08-27.log",
+            "hash": "cb875ad58752f34679880e7bc8ae70c9338b6280944a971003033894570ef147"
         }
     ],
     "hashType": "sha256"

@@ -1,15 +1,17 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma/client.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validateAll } from '../utils/validators.js';
 
-const prisma = new PrismaClient();
-
-// Ensure JWT_SECRET is set in production
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required in production');
+// Ensure JWT_SECRET is set - required for all environments
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
 }
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme_development_only';
+if (process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh';
 
 // Input validation middleware using centralized validator
 const validateSignupInput = (data) => {

@@ -1,56 +1,47 @@
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma/client.js';
+import { logger } from '../utils/logger.js';
 
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme_development_only';
-
-// Debug: Log the JWT secret being used
-console.log('JWT Secret:', JWT_SECRET ? 'Set' : 'Not set');
+// Ensure JWT_SECRET is set - required for all environments
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+if (process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const auth = async (req, res, next) => {
   try {
-    // Debug log
-    console.log('\n=== Auth Middleware Debug ===');
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    
     // Get token from Authorization header (case-insensitive)
     const authHeader = req.headers['authorization'] || req.headers['Authorization'] || '';
     const token = authHeader.split(' ')[1];
     
-    console.log('Extracted token:', token ? `${token.substring(0, 10)}...` : 'No token found');
+    logger.debug('Authentication attempt', { hasToken: !!token, ip: req.ip });
 
     if (!token) {
-      console.error('No token found in Authorization header');
+      logger.warn('Authentication failed: No token provided', { ip: req.ip });
       return res.status(401).json({ 
         success: false,
-        error: 'Access denied. No token provided.' 
+        error: 'Access denied. Authentication required.' 
       });
     }
 
-    // Verify token with detailed error handling
+    // Verify token with secure error handling
     try {
-      console.log('Verifying token with JWT_SECRET length:', JWT_SECRET?.length || 0);
       const decoded = jwt.verify(token, JWT_SECRET);
-      console.log('Successfully decoded token. Payload:', JSON.stringify(decoded, null, 2));
-      
-      // Log the actual fields in the decoded token
-      console.log('Token payload fields:', Object.keys(decoded).join(', '));
       
       // Get user ID from token (support multiple possible fields)
       const userId = decoded.userId || decoded.id || decoded.sub;
-      console.log('Extracted userId from token:', userId);
       
       if (!userId) {
-        const errorMsg = `No valid user ID found in token. Token fields: ${Object.keys(decoded).join(', ')}`;
-        console.error(errorMsg, 'Full token:', JSON.stringify(decoded, null, 2));
+        logger.warn('Authentication failed: Invalid token structure', { ip: req.ip });
         return res.status(401).json({ 
           success: false,
-          error: 'Invalid token: No user ID found in token',
-          tokenFields: Object.keys(decoded)
+          error: 'Authentication failed. Invalid token.'
         });
       }
       
-      console.log('Looking up user in database with ID:', userId);
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { 
@@ -62,57 +53,47 @@ export const auth = async (req, res, next) => {
         }
       });
 
-      console.log('User lookup result:', user ? `Found user ${user.id}` : 'User not found');
-
       if (!user) {
-        console.error('User not found in database');
+        logger.warn('Authentication failed: User not found', { userId, ip: req.ip });
         return res.status(401).json({ 
           success: false,
-          error: 'Authentication failed. User not found.'
+          error: 'Authentication failed.'
         });
       }
       
-      // User is considered active by default since there's no status field
-      console.log(`User ${user.id} authenticated successfully`);
+      logger.debug('User authenticated successfully', { userId: user.id, ip: req.ip });
 
       // Attach user to request object
-      console.log(`Successfully authenticated user ${user.id} (${user.name})`);
       req.user = user;
       return next();
       
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      logger.error('Authentication error', { error: error.message, ip: req.ip });
       
       if (error.name === 'JsonWebTokenError') {
-        console.error('JWT Error Details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
         return res.status(401).json({ 
           success: false, 
-          error: 'Authentication failed. Invalid token.' 
+          error: 'Authentication failed.' 
         });
       }
       
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ 
           success: false,
-          error: 'Token has expired. Please login again.' 
+          error: 'Session expired. Please login again.' 
         });
       }
       
-      console.error('Unexpected error in auth middleware:', error);
       return res.status(500).json({ 
         success: false,
-        error: 'Authentication failed due to an unexpected error.' 
+        error: 'Authentication failed.' 
       });
     }
   } catch (error) {
-    console.error('Unexpected error in auth middleware:', error);
+    logger.error('Unexpected authentication error', { error: error.message, ip: req.ip });
     return res.status(500).json({ 
       success: false,
-      error: 'Authentication failed due to an unexpected error.' 
+      error: 'Authentication failed.' 
     });
   }
 };
