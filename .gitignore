@@ -1,2 +1,27 @@
 # Local Netlify folder
 .netlify
+logs/.1f5404896ec73a36e6473fbd1269c2d71b7cb67c-audit.json
+backend/prisma/migrations/migration_lock.toml
+backend/prisma/migrations/20250820191525_init/migration.sql
+logs/combined-2025-08-19.log
+.gitignore
+logs/error-2025-08-27.log
+.gitignore
+logs/error-2025-08-21.log
+prisma/schema.prisma
+.gitignore
+logs/error-2025-08-20.log
+logs/error-2025-08-19.log
+.gitignore
+logs/error-2025-08-23.log
+logs/combined-2025-08-23.log
+.gitignore
+logs/combined-2025-08-21.log
+logs/combined-2025-08-20.log
+logs/combined-2025-08-27.log
+.gitignore
+
+logs/.c6b40b6f5cb33b0a62cc525b2e585a7412da09b2-audit.json
+
+
+backend/prisma/migrations/migration_lock.toml
