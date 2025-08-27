@@ -6,59 +6,9 @@
     "auditLog": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\.af12e9e812cf498d55f3545c5c9df6395d341ec1-audit.json",
     "files": [
         {
-            "date": 1754333897470,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-05.log",
-            "hash": "de7dd24fc4c2132d1c741fe647489a412df3d4c3ab2c7c9be3bdfa4f8efcb8cf"
-        },
-        {
-            "date": 1754418801900,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-06.log",
-            "hash": "6c8646b7e111323aedc7f18d4451045eda75eceee06cf92f2f1f4380f1e1ce1b"
-        },
-        {
-            "date": 1754513923583,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-07.log",
-            "hash": "a5daf0cc58a35c80f0580bbe83bc289376a515d9e7e214946eef417cfd678e13"
-        },
-        {
-            "date": 1754848801544,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-10.log",
-            "hash": "a6ce86371b0948db158105c0ec524aef9f7f3220cc938e629d8fad2ba24fa5db"
-        },
-        {
-            "date": 1754997254398,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-12.log",
-            "hash": "b02957abb6d18a701dafc0f779886b54a4327580e86212aed1cb2cd7db58012e"
-        },
-        {
-            "date": 1755078730091,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-13.log",
-            "hash": "64f08482f68f332927309476cabc54f2c69247ffa29155173e3720579083e3cb"
-        },
-        {
-            "date": 1755110025225,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-14.log",
-            "hash": "b94417d7b3759d292e6ae9d4a131f6d6c30ca80df809f538d0dfdeca4a3dff63"
-        },
-        {
-            "date": 1755196423639,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-15.log",
-            "hash": "838b4e5c1e185bca9e59a72fbfe3df3486363e3871274d4376f58eeb4b206396"
-        },
-        {
-            "date": 1755292676835,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-16.log",
-            "hash": "9e44dea19a3bae308f4b15fd44a0efedf22c625a271d0fad4145ea30705c4cda"
-        },
-        {
-            "date": 1755374445244,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-17.log",
-            "hash": "62a47a2e039588d503e524bb4713f2eede33bfc5b42c02014a0bff3618b6f497"
-        },
-        {
-            "date": 1755466692511,
-            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-18.log",
-            "hash": "e5aed0c5118c1f355d2f0e8c3ad5b2379ff65cab943ed22c93a0757bb0e59fc4"
+            "date": 1756284185903,
+            "name": "C:\\Users\\jayde\\Desktop\\demo-swayam\\demo-swayam\\logs\\combined-2025-08-27.log",
+            "hash": "b7e6a805b73a5ce02dbce4ae311acb39294ad110e3658a5784ed9e7ea8f70a7e"
         }
     ],
     "hashType": "sha256"

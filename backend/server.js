@@ -8,8 +8,12 @@ import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { execSync } from 'child_process';
-import { prisma } from './prisma/client.js';
+import { prisma, initializeDatabase, disconnectDatabase } from './prisma/client.js';
 import { isUsingS3 } from './services/s3TransactionSlipService.js';
+import { logger } from './utils/logger.js';
+import { securityHeaders, apiRateLimit, sanitizeInput } from './middleware/security.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requestMonitoring, securityMonitoring, performanceMetrics, getMetrics } from './middleware/monitoring.js';
 
 // Load environment variables first
 dotenv.config();
@@ -25,8 +29,7 @@ const corsOptions = {
     'http://localhost:3000',
     'http://localhost:5173',
     'https://rj-755j.onrender.com',
-    'https://resonant-youtiao-a8061f.netlify.app',
-    '*' // Allow all origins for testing
+    'https://resonant-youtiao-a8061f.netlify.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
@@ -37,93 +40,26 @@ const corsOptions = {
 // Initialize Express and HTTP server
 const app = express();
 
-// APPLY CORS FIRST - BEFORE ANY ROUTES OR MIDDLEWARE
+// APPLY SECURITY MIDDLEWARE FIRST
+app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use(apiRateLimit);
 
 // Add body parser middleware for JSON
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input sanitization
+app.use(sanitizeInput);
+
+// Monitoring middleware
+app.use(requestMonitoring);
+app.use(securityMonitoring);
+app.use(performanceMetrics);
 
 // CORS preflight handler
 app.options('*', cors(corsOptions));
 
-// Debug route to check CORS
-app.get('/api/cors-test', (req, res) => {
-  res.json({ 
-    message: 'CORS test successful',
-    origin: req.headers.origin,
-    method: req.method,
-    headers: req.headers
-  });
-});
-
-// Add test routes AFTER CORS middleware
-app.get('/api/test', (req, res) => {
-  console.log('GET test route hit!');
-  res.json({ success: true, message: 'GET test route works!', method: 'GET' });
-});
-
-app.post('/api/test-post', (req, res) => {
-  console.log('POST test route hit!', { 
-    headers: req.headers,
-    body: req.body,
-    query: req.query
-  });
-  res.json({ 
-    success: true, 
-    message: 'POST test route works!',
-    method: 'POST',
-    body: req.body,
-    headers: req.headers
-  });
-});
-
-// Direct test route for manual deposit
-app.post('/api/test-manual-deposit', (req, res) => {
-  console.log('Direct test manual deposit route hit!', { 
-    headers: req.headers,
-    body: req.body,
-    query: req.query
-  });
-  
-  // Simulate the manual deposit controller
-  res.json({ 
-    success: true, 
-    message: 'Direct test manual deposit route works!',
-    method: 'POST',
-    body: req.body
-  });
-});
-
-// Direct manual deposit route for testing
-app.post('/api/direct-manual-deposit', (req, res) => {
-  console.log('Direct manual deposit route hit!', { 
-    headers: req.headers,
-    body: req.body
-  });
-  
-  // Simple validation
-  if (!req.body.name || !req.body.amount) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Name and amount are required',
-      received: req.body
-    });
-  }
-  
-  // Return success response
-  res.json({ 
-    success: true, 
-    message: 'Manual deposit received',
-    data: {
-      name: req.body.name,
-      amount: req.body.amount,
-      utr: req.body.utr || 'TEST-UTR-123',
-      method: req.body.method || 'TEST',
-      timestamp: new Date().toISOString()
-    }
-  });
-});
 
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
@@ -156,14 +92,12 @@ function ensureUploadsDir() {
   }
 }
 
-// Test database connection (no migration handling)
+// Initialize optimized database connection
 async function testDatabaseConnection() {
   try {
-    console.log('🔍 Testing database connection...');
-    await prisma.$connect();
-    console.log('✅ Database connection successful');
+    await initializeDatabase();
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    logger.error('Database initialization failed:', error);
     throw error;
   }
 }
@@ -174,7 +108,7 @@ async function initializeAdmins() {
     const adminCount = await prisma.admin.count();
     
     if (adminCount === 0) {
-      console.log('⚠️  No admin users found. Creating default admin...');
+      logger.warn('No admin users found. Creating default admin...');
       const createAdminsPath = path.join(__dirname, 'scripts', 'createAdmins.js');
       
       execSync(`node ${createAdminsPath}`, { 
@@ -186,12 +120,12 @@ async function initializeAdmins() {
         cwd: __dirname
       });
       
-      console.log('✅ Admin initialization completed');
+      logger.info('Admin initialization completed');
     } else {
-      console.log(`✅ Found ${adminCount} admin user(s)`);
+      logger.info(`Found ${adminCount} admin user(s)`);
     }
   } catch (error) {
-    console.error('❌ Error initializing admins:', error.message);
+    logger.error('Error initializing admins:', error.message);
     throw error;
   }
 }
@@ -202,21 +136,21 @@ async function initializeDemoUsers() {
     const { demoUserService } = await import('./services/demoUserService.js');
     await demoUserService.initializeDemoUsers();
   } catch (error) {
-    console.error('❌ Error initializing demo users:', error.message);
+    logger.error('Error initializing demo users:', error.message);
   }
 }
 
 // Initialize test user for development
 async function initializeTestUser() {
   try {
-    console.log('🧪 Checking for test user...');
+    logger.info('Checking for test user...');
     
     const testUser = await prisma.user.findUnique({
       where: { mobile: '9876543210' }
     });
     
     if (!testUser) {
-      console.log('⚠️  Test user not found. Creating test user...');
+      logger.warn('Test user not found. Creating test user...');
       const createTestUserPath = path.join(__dirname, 'scripts', 'createTestUser.js');
       
       execSync(`node ${createTestUserPath}`, { 
@@ -228,12 +162,12 @@ async function initializeTestUser() {
         cwd: __dirname
       });
       
-      console.log('✅ Test user initialization completed');
+      logger.info('Test user initialization completed');
     } else {
-      console.log(`✅ Found test user: ${testUser.name} (Balance: ${testUser.balance})`);
+      logger.info(`Found test user: ${testUser.name} (Balance: ${testUser.balance})`);
     }
   } catch (error) {
-    console.error('❌ Error initializing test user:', error.message);
+    logger.error('Error initializing test user:', error.message);
     // Don't throw error - test user is optional for production
   }
 }
@@ -268,19 +202,19 @@ async function initializeApp() {
     const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
     shutdownSignals.forEach(signal => {
       process.on(signal, () => {
-        console.log(`\n${signal} received. Shutting down gracefully...`);
+        logger.info(`${signal} received. Shutting down gracefully...`);
         cleanupRoundManagement?.();
         httpServer.close(() => {
-          console.log('Server closed');
+          logger.info('Server closed');
           process.exit(0);
         });
       });
     });
 
-    console.log('✅ Application initialized successfully');
+    logger.info('Application initialized successfully');
 
   } catch (error) {
-    console.error('❌ Failed to initialize application:', error);
+    logger.error('Failed to initialize application:', error);
     process.exit(1);
   }
 }
@@ -305,28 +239,28 @@ async function setupRoutes() {
   // Load routes sequentially to ensure proper loading
   for (const route of routes) {
     try {
-      console.log(`🔍 Attempting to load route: ${route.module} at ${route.path}`);
+      logger.debug(`Attempting to load route: ${route.module} at ${route.path}`);
       const module = await import(route.module);
       const router = module.default;
       
       // Log the router's stack to see what routes are registered
-      console.log(`📋 Router for ${route.module} has ${router.stack?.length || 0} routes`);
+      logger.debug(`Router for ${route.module} has ${router.stack?.length || 0} routes`);
       if (router.stack) {
         router.stack.forEach(layer => {
-          console.log(`  - ${layer.route?.path} (${Object.keys(layer.route?.methods || {}).filter(m => layer.route?.methods[m])})`);
+          logger.debug(`  - ${layer.route?.path} (${Object.keys(layer.route?.methods || {}).filter(m => layer.route?.methods[m])})`);
         });
       }
       
       app.use(route.path, router);
-      console.log(`✅ Loaded route: ${route.module} at ${route.path}`);
+      logger.info(`Loaded route: ${route.module} at ${route.path}`);
     } catch (error) {
-      console.error(`❌ Failed to load route ${route.module}:`, error);
+      logger.error(`Failed to load route ${route.module}:`, error);
     }
   }
 
   // Static files
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-  console.log('✅ All routes loaded successfully');
+  logger.info('All routes loaded successfully');
 }
 
 // Configure middleware
@@ -334,22 +268,17 @@ function configureMiddleware() {
   // CORS is already applied above, don't apply it again
   // Static files and other middleware only
   app.use(express.static(path.join(__dirname, 'public')));
-  
-  // Route to serve the password reset test page
-  app.get('/password-reset-test', (req, res) => {
-    res.sendFile(path.join(__dirname, 'password-reset-test.html'));
-  });
-  
-  // Route to serve the file upload test page
-  app.get('/file-upload-test', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'file-upload-test.html'));
-  });
 }
 
 // Start the application
 async function startApp() {
   configureMiddleware();
   await setupRoutes();
+  
+  // Add error handling middleware AFTER routes
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  
   await initializeApp();
 }
 
@@ -357,12 +286,11 @@ startApp();
 
 // Add graceful shutdown handlers
 const gracefulShutdown = async () => {
-  console.log('Shutting down gracefully...');
+  logger.info('Shutting down gracefully...');
   try {
-    await prisma.$disconnect();
-    console.log('Prisma client disconnected');
+    await disconnectDatabase();
   } catch (error) {
-    console.error('Error during Prisma disconnection:', error);
+    logger.error('Error during database disconnection:', error);
   }
   process.exit(0);
 };
@@ -372,45 +300,60 @@ process.on('SIGINT', gracefulShutdown);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', { promise, reason });
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', error);
   gracefulShutdown();
 });
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
+    const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
+    const dbDuration = Date.now() - dbStart;
+    
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      database: 'connected'
+      database: {
+        status: 'connected',
+        responseTime: `${dbDuration}ms`
+      },
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      version: process.env.npm_package_version || '1.0.0'
     });
   } catch (error) {
-    console.error('Health check failed:', error);
+    logger.error('Health check failed:', error);
     res.status(500).json({ 
       status: 'error', 
-      error: error.message,
-      database: 'disconnected'
+      error: 'Service unavailable',
+      database: {
+        status: 'disconnected'
+      }
     });
   }
 });
 
-// Only call listen ONCE, here:
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running with Socket.io on http://localhost:${PORT}`);
-  console.log(`📄 API Documentation available at http://localhost:${PORT}/api-docs`);
-  console.log(`📱 Mobile app API available at http://localhost:${PORT}/api`);
-  console.log(`📦 S3 Storage: ${isUsingS3() ? '✅ Configured' : '⚠️ Not Configured (using local storage)'}`);
+// Metrics endpoint (protected)
+app.get('/metrics', (req, res) => {
+  // Simple auth check - in production, use proper admin auth
+  const authHeader = req.headers.authorization;
+  if (!authHeader || authHeader !== `Bearer ${process.env.METRICS_TOKEN || 'metrics-secret'}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  res.json(getMetrics());
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Rejection:', err);
-  // Close server & exit process
-  httpServer.close(() => process.exit(1));
+// Only call listen ONCE, here:
+httpServer.listen(PORT, () => {
+  logger.info(`Server running with Socket.io on http://localhost:${PORT}`);
+  logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
+  logger.info(`Mobile app API available at http://localhost:${PORT}/api`);
+  logger.info(`S3 Storage: ${isUsingS3() ? 'Configured' : 'Not Configured (using local storage)'}`);
 });

@@ -184,12 +184,14 @@ async function createNextRound(label, durationMs) {
     
     // Emit Socket.IO event for new round creation
     if (global.io) {
+      const timeRemaining = Math.floor((endTime.getTime() - Date.now()) / 1000);
       global.io.emit('round:created', {
         interval: label,
         round: newRound,
-        timeRemaining: Math.floor((endTime.getTime() - Date.now()) / 1000)
+        timeRemaining: Math.max(0, timeRemaining),
+        bettingCutoffTime: Math.max(0, timeRemaining - 5) // Last 5 seconds disabled
       });
-      console.log(`📡 Emitted round:created for ${label}`);
+      console.log(`📡 Emitted round:created for ${label}, timeRemaining: ${timeRemaining}s`);
     }
     
     return newRound;
@@ -213,6 +215,17 @@ export async function settleExpiredRounds() {
         console.log(`[${new Date().toLocaleTimeString()}] Settling round id=${round.id} period=${round.period} interval=${round.interval}`);
         
         const bets = await prisma.wingoBet.findMany({ where: { roundId: round.id } });
+        
+        // Emit round settlement event immediately
+        if (global.io) {
+          global.io.emit('round:settled', {
+            interval: round.interval,
+            round: round,
+            resultNumber: null // Will be updated after calculation
+          });
+          console.log(`📡 Emitted round:settled for ${round.interval}`);
+        }
+        
         let resultNumber;
         
         if (bets.length === 1) {
@@ -364,6 +377,16 @@ export async function settleExpiredRounds() {
           } 
         });
         
+        // Emit final settlement with result
+        if (global.io) {
+          global.io.emit('round:result', {
+            interval: round.interval,
+            round: { ...round, resultNumber, status: 'settled' },
+            resultNumber
+          });
+          console.log(`📡 Emitted round:result for ${round.interval} with number ${resultNumber}`);
+        }
+        
         console.log(`[${new Date().toLocaleTimeString()}] Settled round id=${round.id} with resultNumber=${resultNumber}`);
       } catch (err) {
         console.error('Error settling round:', err);
@@ -403,7 +426,7 @@ export function initRoundManagement() {
     console.log('✅ Startup round creation completed');
   }, 2000);
   
-  // Check for new rounds every 10 seconds (aligned with round intervals)
+  // Check for new rounds every 5 seconds for better responsiveness
   const createRoundsInterval = setInterval(() => {
     if (!isProcessing.createRounds) {
       isProcessing.createRounds = true;
@@ -413,7 +436,7 @@ export function initRoundManagement() {
         isProcessing.createRounds = false;
       });
     }
-  }, 10000);
+  }, 5000);
   
   // Check for expired rounds every 5 seconds
   const settleRoundsInterval = setInterval(() => {
