@@ -85,7 +85,7 @@ const BetResultPopup = ({ betResult, onClose }: BetResultPopupProps) => {
           </h2>
           
           <p className="text-white/90 text-sm">
-            Period: {betResult.period}
+            Period prasad : {betResult.period}
           </p>
         </div>
 
