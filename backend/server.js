@@ -105,24 +105,21 @@ async function testDatabaseConnection() {
 // Initialize admin users
 async function initializeAdmins() {
   try {
+    const { initializeAdminUsers } = await import('./services/adminUserService.js');
+    
     const adminCount = await prisma.admin.count();
     
     if (adminCount === 0) {
-      logger.warn('No admin users found. Creating default admin...');
-      const createAdminsPath = path.join(__dirname, 'scripts', 'createAdmins.js');
-      
-      execSync(`node ${createAdminsPath}`, { 
-        stdio: 'inherit',
-        env: { 
-          ...process.env, 
-          NODE_OPTIONS: '--experimental-vm-modules'
-        },
-        cwd: __dirname
-      });
-      
-      logger.info('Admin initialization completed');
+      logger.warn('No admin users found. Initializing from environment config...');
+      const result = await initializeAdminUsers();
+      logger.info(`Admin initialization completed: ${result.created} created, ${result.existing} existing`);
     } else {
       logger.info(`Found ${adminCount} admin user(s)`);
+      // Still run initialization to create any missing admins from env config
+      const result = await initializeAdminUsers();
+      if (result.created > 0) {
+        logger.info(`Added ${result.created} new admin users from environment config`);
+      }
     }
   } catch (error) {
     logger.error('Error initializing admins:', error.message);
@@ -233,7 +230,8 @@ async function setupRoutes() {
     { path: '/api/wingo', module: './routes/wingoRoutes.js' },
     { path: '/api/files', module: './routes/fileUpload.js' },
     { path: '/admin', module: './routes/adminAuthRoutes.js' },
-    { path: '/api/demo', module: './routes/demoRoutes.js' }
+    { path: '/api/demo', module: './routes/demoRoutes.js' },
+    { path: '/api/admin-management', module: './routes/adminManagementRoutes.js' }
   ];
 
   // Load routes sequentially to ensure proper loading

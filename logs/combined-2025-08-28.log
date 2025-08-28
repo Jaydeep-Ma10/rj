@@ -1,0 +1,82 @@
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/health","service":"wingo-backend","timestamp":"2025-08-28 13:58:27","userAgent":"node-fetch"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:33"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:33"}
+{"duration":"6402ms","level":"info","message":"Request completed","method":"GET","path":"/health","service":"wingo-backend","statusCode":500,"success":true,"timestamp":"2025-08-28 13:58:33"}
+{"duration":"6402ms","level":"warn","message":"Slow request detected","method":"GET","path":"/health","service":"wingo-backend","timestamp":"2025-08-28 13:58:34"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:43"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:43"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:53"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findMany","timestamp":"2025-08-28 13:58:53"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findFirst()`\u001b[22m invocation:\u001b[39m\n\n\nTransaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.","service":"wingo-backend","target":"wingoRound.findFirst","timestamp":"2025-08-28 13:59:46"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.create()`\u001b[22m invocation:\u001b[39m\n\n\nTransaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5103 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.","service":"wingo-backend","target":"wingoRound.create","timestamp":"2025-08-28 14:00:34"}
+{"duration":"1754496ms","level":"warn","message":"Slow database query detected","params":"[\"pending\",0]","query":"SELECT \"public\".\"WingoRound\".\"id\", \"public\".\"WingoRound\".\"interval\", \"public\".\"WingoRound\".\"startTime\", \"public\".\"WingoRound\".\"endTime\", \"public\".\"WingoRound\".\"period\" FROM \"public\".\"WingoRound\" WHERE \"public\".\"WingoRound\".\"status\" = $1 OFFSET $2","service":"wingo-backend","timestamp":"2025-08-28 14:31:15"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/health","service":"wingo-backend","timestamp":"2025-08-28 14:31:16","userAgent":"node-fetch"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoBet.findMany()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoBet.findMany","timestamp":"2025-08-28 14:31:18"}
+{"level":"error","message":"\n\u001b[31mInvalid \u001b[1m`prisma.wingoRound.findFirst()`\u001b[22m invocation:\u001b[39m\n\n\nCan't reach database server at `localhost:5432`\n\nPlease make sure your database server is running at `localhost:5432`.","service":"wingo-backend","target":"wingoRound.findFirst","timestamp":"2025-08-28 14:31:20"}
+{"duration":"5188ms","level":"info","message":"Request completed","method":"GET","path":"/health","service":"wingo-backend","statusCode":500,"success":true,"timestamp":"2025-08-28 14:31:21"}
+{"duration":"5188ms","level":"warn","message":"Slow request detected","method":"GET","path":"/health","service":"wingo-backend","timestamp":"2025-08-28 14:31:21"}
+{"level":"info","message":"Server running with Socket.io on http://localhost:5000","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"API Documentation available at http://localhost:5000/api-docs","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Mobile app API available at http://localhost:5000/api","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"S3 Storage: Configured","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Loaded route: ./routes/healthRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Loaded route: ./routes/manualDepositRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Loaded route: ./routes/adminRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Loaded route: ./routes/userRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:42"}
+{"level":"info","message":"Loaded route: ./routes/authRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/passwordResetRoutes.js at /api/password-reset","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/manualWithdrawRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/wingoRoutes.js at /api/wingo","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/fileUpload.js at /api/files","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/adminAuthRoutes.js at /admin","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Loaded route: ./routes/demoRoutes.js at /api/demo","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"All routes loaded successfully","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Starting a postgresql pool with 5 connections.","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"duration":"15ms","level":"info","message":"Database health check passed","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"duration":15,"level":"info","message":"Database connected successfully","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Found 1 admin user(s)","service":"wingo-backend","timestamp":"2025-08-28 14:31:43"}
+{"level":"info","message":"Checking for test user...","service":"wingo-backend","timestamp":"2025-08-28 14:31:44"}
+{"level":"info","message":"Found test user: Test User (Balance: 0)","service":"wingo-backend","timestamp":"2025-08-28 14:31:44"}
+{"level":"info","message":"Application initialized successfully","service":"wingo-backend","timestamp":"2025-08-28 14:31:44"}
+{"level":"info","message":"Server running with Socket.io on http://localhost:5000","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"API Documentation available at http://localhost:5000/api-docs","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Mobile app API available at http://localhost:5000/api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"S3 Storage: Configured","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/healthRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/manualDepositRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/adminRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/userRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/authRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/passwordResetRoutes.js at /api/password-reset","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/manualWithdrawRoutes.js at /api","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/wingoRoutes.js at /api/wingo","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/fileUpload.js at /api/files","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/adminAuthRoutes.js at /admin","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/demoRoutes.js at /api/demo","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Loaded route: ./routes/adminManagementRoutes.js at /api/admin-management","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"All routes loaded successfully","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Starting a postgresql pool with 5 connections.","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"duration":"30ms","level":"info","message":"Database health check passed","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"duration":30,"level":"info","message":"Database connected successfully","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Found 1 admin user(s)","service":"wingo-backend","timestamp":"2025-08-28 15:11:26"}
+{"level":"info","message":"Added 20 new admin users from environment config","service":"wingo-backend","timestamp":"2025-08-28 15:11:28"}
+{"level":"info","message":"Checking for test user...","service":"wingo-backend","timestamp":"2025-08-28 15:11:29"}
+{"level":"info","message":"Found test user: Test User (Balance: 0)","service":"wingo-backend","timestamp":"2025-08-28 15:11:29"}
+{"level":"info","message":"Application initialized successfully","service":"wingo-backend","timestamp":"2025-08-28 15:11:29"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"POST","path":"/admin/login","service":"wingo-backend","timestamp":"2025-08-28 15:13:45","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36"}
+{"duration":"123ms","level":"info","message":"Request completed","method":"POST","path":"/login","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 15:13:45"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/admin/deposits","service":"wingo-backend","timestamp":"2025-08-28 15:13:45","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36"}
+{"duration":"115ms","level":"info","message":"Request completed","method":"GET","path":"/admin/deposits","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 15:13:45"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/admin/deposits","service":"wingo-backend","timestamp":"2025-08-28 15:13:45","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36"}
+{"duration":"31ms","level":"info","message":"Request completed","method":"GET","path":"/admin/deposits","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 15:13:45"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/admin/withdrawals","service":"wingo-backend","timestamp":"2025-08-28 15:14:00","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36"}
+{"duration":"11ms","level":"info","message":"Request completed","method":"GET","path":"/admin/withdrawals","service":"wingo-backend","statusCode":401,"success":true,"timestamp":"2025-08-28 15:14:00"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/admin/withdrawals","service":"wingo-backend","timestamp":"2025-08-28 15:14:00","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36"}
+{"duration":"2ms","level":"info","message":"Request completed","method":"GET","path":"/admin/withdrawals","service":"wingo-backend","statusCode":401,"success":true,"timestamp":"2025-08-28 15:14:00"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/health","service":"wingo-backend","timestamp":"2025-08-28 15:25:29","userAgent":"node-fetch"}
+{"duration":"208ms","level":"info","message":"Request completed","method":"GET","path":"/health","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 15:25:29"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/health","service":"wingo-backend","timestamp":"2025-08-28 15:39:29","userAgent":"node-fetch"}
+{"duration":"120ms","level":"info","message":"Request completed","method":"GET","path":"/health","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 15:39:29"}
+{"ip":"::1","level":"info","message":"Incoming request","method":"GET","path":"/api/health","service":"wingo-backend","timestamp":"2025-08-28 18:58:49","userAgent":"node-fetch"}
+{"duration":"3311ms","level":"info","message":"Request completed","method":"GET","path":"/health","service":"wingo-backend","statusCode":200,"success":true,"timestamp":"2025-08-28 18:58:53"}
+{"duration":"3311ms","level":"warn","message":"Slow request detected","method":"GET","path":"/health","service":"wingo-backend","timestamp":"2025-08-28 18:58:53"}
