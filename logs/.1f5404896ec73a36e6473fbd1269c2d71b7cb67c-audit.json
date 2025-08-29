@@ -34,6 +34,16 @@
             "date": 1756372474058,
             "name": "D:\\projects\\rj\\logs\\combined-2025-08-28.log",
             "hash": "883ef4881836fef920c2da014b8ab9d92ab190843f81597eceaca7c8e66be916"
+        },
+        {
+            "date": 1756408302210,
+            "name": "D:\\projects\\rj\\logs\\combined-2025-08-29.log",
+            "hash": "3c7044aaf09f7c65779c7b96cccf92d801729713617f56cacc4612fd3cae378c"
+        },
+        {
+            "date": 1756492227066,
+            "name": "D:\\projects\\rj\\logs\\combined-2025-08-30.log",
+            "hash": "f3981ed1be95b425c253fabf00999c7d338f657767d3eaa0227d2e28730d5d79"
         }
     ],
     "hashType": "sha256"

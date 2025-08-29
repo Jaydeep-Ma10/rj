@@ -449,7 +449,7 @@ const WingoGame = () => {
           
           console.log(`🎉 Showing bet result popup for bet ${latestBet.id}: ${latestBet.result}`);
           
-          // Close any existing popup first
+          // Close any ex isting popup first
           setBetResultPopup(null);
           
           // Show new popup after a short delay
