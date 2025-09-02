@@ -44,6 +44,11 @@
             "date": 1756492227066,
             "name": "D:\\projects\\rj\\logs\\combined-2025-08-30.log",
             "hash": "f3981ed1be95b425c253fabf00999c7d338f657767d3eaa0227d2e28730d5d79"
+        },
+        {
+            "date": 1756816970592,
+            "name": "D:\\projects\\rj\\logs\\combined-2025-09-02.log",
+            "hash": "8d3a743225a7a5a1918aa08609240ea9bd6aa9a3b9f1ca9355eeba59ed75fc62"
         }
     ],
     "hashType": "sha256"

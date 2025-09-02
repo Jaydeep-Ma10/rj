@@ -39,6 +39,11 @@
             "date": 1756408302208,
             "name": "D:\\projects\\rj\\logs\\error-2025-08-29.log",
             "hash": "06af284a9931ee3ba2d274294c87312c51b9e9461b7ac2dabcac8f22c789a02d"
+        },
+        {
+            "date": 1756816970591,
+            "name": "D:\\projects\\rj\\logs\\error-2025-09-02.log",
+            "hash": "7b891ba5bfda59d7eb473a5443c529c6cc7befb63454ae600934fcb9adccdd6b"
         }
     ],
     "hashType": "sha256"
