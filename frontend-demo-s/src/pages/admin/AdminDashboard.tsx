@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import api from '../../utils/api';
-import { buildAssetUrl } from '../../config/api';
+import api from "../../utils/api";
+import { buildAssetUrl } from "../../config/api";
 import AdminWithdrawals from "./AdminWithdrawals";
+import { FaPowerOff } from "react-icons/fa";
 
 const AdminDashboard = () => {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Paytm Pay");
-  const [dashboardTab, setDashboardTab] = useState<'deposits' | 'withdrawals'>('deposits');
+  const [dashboardTab, setDashboardTab] = useState<"deposits" | "withdrawals">(
+    "deposits"
+  );
 
   const paymentMethods = ["Paytm Pay", "PhonePe", "Google Pay", "Others"];
 
@@ -18,26 +21,36 @@ const AdminDashboard = () => {
     if (deposit.slipViewUrl) {
       return deposit.slipViewUrl;
     }
-    
+
     if (deposit.slipUrl) {
       // If it's already an absolute URL (starts with http/https), use it directly
-      if (deposit.slipUrl.startsWith('http://') || deposit.slipUrl.startsWith('https://')) {
+      if (
+        deposit.slipUrl.startsWith("http://") ||
+        deposit.slipUrl.startsWith("https://")
+      ) {
         return deposit.slipUrl;
       }
-      
+
       // Otherwise, it's a relative URL, prepend the base URL
       return buildAssetUrl(deposit.slipUrl);
     }
-    
+
     return null;
   };
 
   // Group deposits by method
   const groupedDeposits = paymentMethods.reduce((acc, method) => {
-    acc[method] = deposits.filter(d => (d.method || "Others").toLowerCase() === method.toLowerCase());
+    acc[method] = deposits.filter(
+      (d) => (d.method || "Others").toLowerCase() === method.toLowerCase()
+    );
     return acc;
   }, {} as Record<string, any[]>);
-  groupedDeposits["Others"] = deposits.filter(d => !paymentMethods.slice(0,3).some(m => (d.method || "").toLowerCase() === m.toLowerCase()));
+  groupedDeposits["Others"] = deposits.filter(
+    (d) =>
+      !paymentMethods
+        .slice(0, 3)
+        .some((m) => (d.method || "").toLowerCase() === m.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -45,8 +58,10 @@ const AdminDashboard = () => {
       setError("");
       try {
         const token = localStorage.getItem("adminToken");
-        const res = await api.get("/admin/deposits", { headers: { Authorization: `Bearer ${token}` } });
-        console.log('Fetched deposits:', res.data.deposits);
+        const res = await api.get("/admin/deposits", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Fetched deposits:", res.data.deposits);
         setDeposits(res.data.deposits || []);
       } catch (err: any) {
         setError("Failed to load deposits");
@@ -61,29 +76,38 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const endpoint = action === "approve" ? "verify" : "reject";
-      
+
       // Use POST method and correct endpoint
-      await api.post(`/admin/deposits/${id}/${endpoint}`, {}, { 
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json' 
-        } 
-      });
-      
+      await api.post(
+        `/admin/deposits/${id}/${endpoint}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       // Update the UI optimistically
-      setDeposits((prev: any[]) => 
-        prev.map((d: any) => 
-          d.id === id ? { 
-            ...d, 
-            status: action === "approve" ? "approved" : "rejected" 
-          } : d
+      setDeposits((prev: any[]) =>
+        prev.map((d: any) =>
+          d.id === id
+            ? {
+                ...d,
+                status: action === "approve" ? "approved" : "rejected",
+              }
+            : d
         )
       );
-      
+
       alert(`Deposit request ${action}d successfully!`);
     } catch (error: any) {
       console.error(`Failed to ${action} deposit:`, error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Unknown error occurred';
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unknown error occurred";
       alert(`Failed to ${action} deposit: ${errorMessage}`);
     }
   };
@@ -94,109 +118,312 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 bg-white p-8 rounded shadow relative">
-      <button
-        onClick={handleLogout}
-        className="absolute top-6 right-8 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-        title="Logout"
-      >
-        Logout
-      </button>
-      <div className="flex gap-4 mb-6">
-        <button
-          className={`px-4 py-2 rounded font-semibold ${dashboardTab === 'deposits' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setDashboardTab('deposits')}
-        >
-          Deposits
-        </button>
-        <button
-          className={`px-4 py-2 rounded font-semibold ${dashboardTab === 'withdrawals' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setDashboardTab('withdrawals')}
-        >
-          Withdrawals
-        </button>
+    <>
+      <div className="relative flex flex-col items-center justify-center w-full text-white px-2 py-3 bg-[#2B3270]">
+        <div className="flex items-center justify-center">
+          <h2 className="text-lg font-bold">Admin Dashboard</h2>
+        </div>
       </div>
-      {dashboardTab === 'deposits' ? (
-        <>
-          <h2 className="text-2xl font-bold mb-6">Manual Deposit Requests</h2>
-          <div className="flex gap-4 mb-6 border-b">
-            {paymentMethods.map(method => (
-              <button
-                key={method}
-                className={`px-3 py-1 rounded-t font-semibold border-b-2 ${activeTab === method ? 'border-blue-600 text-blue-700 bg-blue-100' : 'border-transparent text-gray-600 bg-gray-100'}`}
-                onClick={() => setActiveTab(method)}
-              >
-                {method}
-                <span className="ml-2 inline-block bg-blue-200 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                  {groupedDeposits[method]?.length || 0}
-                </span>
-              </button>
-            ))}
-          </div>
-          {/* ...rest of deposits table rendering... */}
-        </>
-      ) : (
-        <AdminWithdrawals />
-      )}
-      <div className="flex gap-4 mb-6 border-b">
-        {paymentMethods.map(method => (
+      <div className="max-w-5xl mx-auto mt-10 p-8 rounded shadow relative">
+        <div className="flex justify-center items-center gap-4 mb-6">
           <button
-            key={method}
-            className={`relative px-5 py-2 font-semibold border-b-2 transition-all duration-150 ${activeTab === method ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-600'}`}
-            onClick={() => setActiveTab(method)}
+            className={`relative px-4 py-2 rounded font-semibold transition-all
+      ${
+        dashboardTab === "deposits"
+          ? " text-white after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:right-0 after:h-[2px] after:bg-[#66A9FF]"
+          : " text-white"
+      }`}
+            onClick={() => setDashboardTab("deposits")}
           >
-            {method}
-            <span className={`ml-2 inline-block text-xs rounded-full px-2 py-0.5 ${groupedDeposits[method]?.length ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>{groupedDeposits[method]?.length || 0}</span>
+            Deposits
           </button>
-        ))}
-      </div>
-      {loading ? <div>Loading...</div> : error ? <div className="text-red-600">{error}</div> : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="py-2 px-2">User</th>
-                <th className="py-2 px-2">Amount</th>
-                <th className="py-2 px-2">UTR</th>
-                <th className="py-2 px-2">Method</th>
-                <th className="py-2 px-2">Slip</th>
-                <th className="py-2 px-2">Date</th>
-                <th className="py-2 px-2">Status</th>
-                <th className="py-2 px-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(groupedDeposits[activeTab] || []).length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">No requests for {activeTab}.</td></tr>
-              ) : (
-                groupedDeposits[activeTab]?.map(d => (
-                  <tr key={d.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="py-2 px-2">{d.name}</td>
-                    <td className="py-2 px-2">₹{d.amount}</td>
-                    <td className="py-2 px-2">{d.utr}</td>
-                    <td className="py-2 px-2">{d.method}</td>
-                    <td className="py-2 px-2">{getSlipUrl(d) ? <a href={getSlipUrl(d)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a> : "-"}</td>
-                    <td className="py-2 px-2">{new Date(d.createdAt).toLocaleString()}</td>
-                    <td className="py-2 px-2 capitalize">
-                      {d.status}
-                      {console.log('Deposit status:', d.id, d.status, 'Type:', typeof d.status, 'Lowercase:', String(d.status).toLowerCase())}
-                    </td>
-                    <td className="py-2 px-2">
-                      {(d.status && String(d.status).toLowerCase() === 'pending') && (
+
+          <button
+            className={`relative px-4 py-2 rounded font-semibold transition-all
+      ${
+        dashboardTab === "withdrawals"
+          ? " text-white after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:right-0 after:h-[2px] after:bg-[#66A9FF]"
+          : " text-white"
+      }`}
+            onClick={() => setDashboardTab("withdrawals")}
+          >
+            Withdrawals
+          </button>
+        </div>
+
+        {dashboardTab === "deposits" ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 px-4 mb-6 text-center  py-4 rounded">
+              {paymentMethods.map((method) => (
+                <button
+                  key={method}
+                  className={`relative px-5 py-2 font-semibold border-b-2 transition-all duration-150 rounded ${
+                    activeTab === method
+                      ? "bg-[#61A9FF] border-green-600 text-white"
+                      : "bg-[#2B3270] border-transparent text-gray-200 hover:text-white hover:border-[#61A9FF]"
+                  }`}
+                  onClick={() => setActiveTab(method)}
+                >
+                  {method} <br />
+                  <span
+                    className={`ml-2 inline-block text-xs rounded-full px-2 py-0.5 ${
+                      groupedDeposits[method]?.length
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {groupedDeposits[method]?.length || 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+           {loading ? (
+  <div className="bg-[#1e2d5c] text-white rounded-xl p-3 sm:p-4 md:p-6 mt-3 md:mt-4">
+    <h2 className="text-base md:text-lg lg:text-xl font-bold mb-3 md:mb-4 text-center">
+      💳 Deposits
+    </h2>
+    <div className="text-center text-gray-400 py-8">
+      <div className="text-3xl mb-2">⏳</div>
+      <p className="text-sm md:text-base">Loading...</p>
+    </div>
+  </div>
+) : error ? (
+  <div className="bg-[#1e2d5c] text-white rounded-xl p-3 sm:p-4 md:p-6 mt-3 md:mt-4">
+    <h2 className="text-base md:text-lg lg:text-xl font-bold mb-3 md:mb-4 text-center">
+      💳 Deposits
+    </h2>
+    <div className="text-center text-red-400 py-8">
+      <div className="text-3xl mb-2">❌</div>
+      <p className="text-sm md:text-base">{error}</p>
+    </div>
+  </div>
+) : (
+  <div className="bg-[#2B3270] text-white rounded-xl">
+    {/* Mobile View */}
+    <div className="block sm:hidden overflow-x-auto">
+      <table className="w-full text-xs sm:text-sm md:text-base table-auto">
+        <thead>
+          <tr className="bg-[#374992] text-white">
+            <th className="py-3 px-3 text-center font-semibold">User</th>
+            <th className="py-3 px-3 text-center font-semibold">Amount</th>
+            <th className="py-3 px-3 text-center font-semibold">UTR</th>
+            <th className="py-3 px-3 text-center font-semibold">Method</th>
+            <th className="py-3 px-3 text-center font-semibold">Slip</th>
+            <th className="py-3 px-3 text-center font-semibold">Date</th>
+            <th className="py-3 px-3 text-center font-semibold">Status</th>
+            <th className="py-3 px-3 text-center font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(groupedDeposits[activeTab] || []).length === 0 ? (
+            <tr>
+              <td
+                colSpan={8}
+                className="text-center py-8 text-gray-400"
+              >
+                <div className="text-3xl mb-2">📋</div>
+                <p className="text-sm md:text-base">No requests for {activeTab}</p>
+              </td>
+            </tr>
+          ) : (
+            groupedDeposits[activeTab]?.map((d, index) => (
+              <tr
+                key={d.id}
+                className={`border-b border-gray-700 hover:bg-[#33416d] ${
+                  index === 0 ? ' bg-green-900/20' : ''
+                }`}
+              >
+                <td className="py-2 px-3 text-center text-xs">{d.name}</td>
+                <td className="py-2 px-3 text-center">
+                  <span className="font-bold text-lg text-green-500">₹{d.amount}</span>
+                </td>
+                <td className="py-2 px-3 text-center text-xs font-mono">{d.utr}</td>
+                <td className="py-2 px-3 text-center">
+                  <span className="px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300">
+                    {d.method}
+                  </span>
+                </td>
+                <td className="py-2 px-3 text-center">
+                  {getSlipUrl(d) ? (
+                    <a
+                      href={getSlipUrl(d)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 underline hover:text-blue-300 text-xs"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">-</span>
+                  )}
+                </td>
+                <td className="py-2 px-3 text-center text-xs">
+                  {new Date(d.createdAt).toLocaleDateString()}
+                </td>
+                <td className="py-2 px-3 text-center">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs capitalize ${
+                      String(d.status).toLowerCase() === "approved"
+                        ? "bg-green-500/20 text-green-300"
+                        : String(d.status).toLowerCase() === "rejected"
+                        ? "bg-red-500/20 text-red-300"
+                        : "bg-orange-500/20 text-orange-300"
+                    }`}
+                  >
+                    {d.status}
+                  </span>
+                </td>
+                <td className="py-2 px-3 text-center">
+                  <div className="flex justify-center items-center space-x-1">
+                    {d.status &&
+                      String(d.status).toLowerCase() === "pending" && (
                         <>
-                          <button className="bg-green-600 text-white px-2 py-1 rounded mr-2 hover:bg-green-700" onClick={() => handleAction(d.id, "approve")}>Approve</button>
-                          <button className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700" onClick={() => handleAction(d.id, "reject")}>Reject</button>
+                          <button
+                            className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 text-xs"
+                            onClick={() =>
+                              handleAction(d.id, "approve")
+                            }
+                          >
+                            ✓
+                          </button>
+                          <button
+                            className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 text-xs"
+                            onClick={() => handleAction(d.id, "reject")}
+                          >
+                            ✕
+                          </button>
                         </>
                       )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
+
+    {/* Desktop View */}
+    <div className="hidden sm:block overflow-x-auto">
+      <table className="w-full text-sm md:text-base table-auto">
+        <thead>
+          <tr className="bg-[#293b6a] text-white">
+            <th className="py-3 px-4 text-left font-semibold">User</th>
+            <th className="py-3 px-4 text-center font-semibold">Amount</th>
+            <th className="py-3 px-4 text-center font-semibold">UTR</th>
+            <th className="py-3 px-4 text-center font-semibold">Method</th>
+            <th className="py-3 px-4 text-center font-semibold">Slip</th>
+            <th className="py-3 px-4 text-center font-semibold">Date</th>
+            <th className="py-3 px-4 text-center font-semibold">Status</th>
+            <th className="py-3 px-4 text-center font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(groupedDeposits[activeTab] || []).length === 0 ? (
+            <tr>
+              <td
+                colSpan={8}
+                className="text-center py-8 text-gray-400"
+              >
+                <div className="text-3xl mb-2">📋</div>
+                <p className="text-sm md:text-base">No requests for {activeTab}</p>
+              </td>
+            </tr>
+          ) : (
+            groupedDeposits[activeTab]?.map((d, index) => (
+              <tr
+                key={d.id}
+                className={`border-b border-gray-700 hover:bg-[#33416d] ${
+                  index === 0 ? 'animate-pulse bg-green-900/20' : ''
+                }`}
+              >
+                <td className="py-2 px-4 font-mono text-sm md:text-base">{d.name}</td>
+                <td className="py-2 px-4 text-center">
+                  <span className="font-bold text-lg md:text-xl text-green-500">₹{d.amount}</span>
+                </td>
+                <td className="py-2 px-4 text-center font-mono">{d.utr}</td>
+                <td className="py-2 px-4 text-center">
+                  <span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300">
+                    {d.method}
+                  </span>
+                </td>
+                <td className="py-2 px-4 text-center">
+                  {getSlipUrl(d) ? (
+                    <a
+                      href={getSlipUrl(d)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 underline hover:text-blue-300"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">-</span>
+                  )}
+                </td>
+                <td className="py-2 px-4 text-center">
+                  {new Date(d.createdAt).toLocaleString()}
+                </td>
+                <td className="py-2 px-4 text-center">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs capitalize ${
+                      String(d.status).toLowerCase() === "approved"
+                        ? "bg-green-500/20 text-green-300"
+                        : String(d.status).toLowerCase() === "rejected"
+                        ? "bg-red-500/20 text-red-300"
+                        : "bg-orange-500/20 text-orange-300"
+                    }`}
+                  >
+                    {d.status}
+                  </span>
+                </td>
+                <td className="py-2 px-4 text-center">
+                  <div className="flex justify-center items-center space-x-2">
+                    {d.status &&
+                      String(d.status).toLowerCase() === "pending" && (
+                        <>
+                          <button
+                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            onClick={() =>
+                              handleAction(d.id, "approve")
+                            }
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                            onClick={() => handleAction(d.id, "reject")}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+          </>
+        ) : (
+          <AdminWithdrawals />
+        )}
+      </div>
+      <div className="flex justify-center items-center ">
+        <button
+          onClick={handleLogout}
+          className="w-full border border-[#61A9FF]  text-[#61A9FF] py-2 mx-4 rounded-3xl font-bold hover:bg-red-700 transition"
+        >
+          <FaPowerOff className="inline mr-1 text-xl" />
+          Logout
+        </button>
+      </div>
+    </>
   );
 };
 
