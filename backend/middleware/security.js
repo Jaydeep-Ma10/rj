@@ -3,48 +3,75 @@ import helmet from 'helmet';
 import { body, validationResult } from 'express-validator';
 import { logger } from '../utils/logger.js';
 
-// Rate limiting configurations
-export const createRateLimit = (windowMs, max, message) => {
+/**
+ * Create a rate limiter with consistent error handling
+ */
+const createRateLimiter = (windowMs, max, message, options = {}) => {
   return rateLimit({
     windowMs,
     max,
-    message: { success: false, error: message },
+    message,
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
-      logger.warn('Rate limit exceeded', { 
-        ip: req.ip, 
+      const clientInfo = {
+        ip: req.ip,
+        method: req.method,
         path: req.path,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get('User-Agent'),
+        userId: req.user?.id
+      };
+      
+      logger.warn('Rate limit exceeded', { 
+        ...clientInfo,
+        rateLimit: { windowMs, max }
       });
-      res.status(429).json({ success: false, error: message });
-    }
+      
+      res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded',
+        message,
+        status: 429
+      });
+    },
+    ...options
   });
 };
 
-// Authentication rate limiting
-export const authRateLimit = createRateLimit(
+// Authentication rate limiting (stricter)
+export const authRateLimit = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   5, // 5 attempts
-  'Too many authentication attempts. Please try again later.'
+  'Too many login attempts. Please try again later.',
+  {
+    keyGenerator: (req) => {
+      return req.body?.mobile ? `${req.ip}:${req.body.mobile}` : req.ip;
+    }
+  }
 );
 
 // General API rate limiting
-export const apiRateLimit = createRateLimit(
+export const apiRateLimit = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
-  100, // 100 requests
-  'Too many requests. Please try again later.'
+  100, // 100 requests per window
+  'Too many requests. Please try again later.',
+  {
+    skip: (req) => {
+      // Skip rate limiting for health checks and static files
+      return req.path === '/health' || req.path.startsWith('/uploads/');
+    }
+  }
 );
 
-// Betting rate limiting
-export const bettingRateLimit = createRateLimit(
-  60 * 1000, // 1 minute
-  10, // 10 bets per minute
-  'Too many betting attempts. Please slow down.'
-);
+// Betting rate limiting (disabled for now - see TODO list)
+// export const bettingRateLimit = createRateLimiter(
+//   60 * 1000, // 1 minute
+//   10, // 10 bets per minute
+//   'Too many betting attempts. Please slow down.'
+// );
 
 // File upload rate limiting
-export const uploadRateLimit = createRateLimit(
+export const uploadRateLimit = createRateLimiter(
   60 * 60 * 1000, // 1 hour
   10, // 10 uploads per hour
   'Too many file uploads. Please try again later.'
