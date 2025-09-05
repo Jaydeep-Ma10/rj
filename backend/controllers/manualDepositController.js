@@ -79,15 +79,18 @@ if (!req.file) {
 }
   
     
-    // Validate amount is a positive number
+    // Validate deposit amount
     const depositAmount = parseFloat(amount);
-    if (isNaN(depositAmount) || depositAmount <= 0) {
-      console.error('Invalid amount:', amount);
+    const MIN_DEPOSIT_AMOUNT = 300;
+    
+    if (isNaN(depositAmount) || depositAmount < MIN_DEPOSIT_AMOUNT) {
+      console.error('Invalid deposit amount:', amount);
       return res.status(400).json({
         success: false,
-        message: 'Amount must be a positive number',
+        message: `Minimum deposit amount is ${MIN_DEPOSIT_AMOUNT}`,
         field: 'amount',
-        value: amount
+        value: amount,
+        minAmount: MIN_DEPOSIT_AMOUNT
       });
     }
     
